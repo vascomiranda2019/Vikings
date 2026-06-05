@@ -23,7 +23,7 @@ export function carregarIdiomaGuardado() {
   try {
     const guardado = localStorage.getItem('vs_idioma');
     if (guardado) idiomaAtual = guardado;
-  } catch (e) { /* ignora */ }
+  } catch (e) {  }
 }
 
 // t() = traduz a chave; cai para PT e depois para a propria chave

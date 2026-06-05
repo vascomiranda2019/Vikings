@@ -1,0 +1,103 @@
+export default class Player extends Phaser.Physics.Arcade.Sprite {
+  constructor(scene, x, y) {
+    super(scene, x, y, 'heroi');
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
+    this.setCollideWorldBounds(true).setDepth(10);
+
+    this.speed          = 220;
+    this.maxHP          = 100;
+    this.hp             = 100;
+    this.iframeDuration = 1000;
+    this.iFrames        = false;
+    this.axeSpeed       = 480;
+    this.axeCooldown    = 350;
+    this.axeLifespan    = 1500;
+    this.proximoDisparo = 0;
+
+    this.xp            = 0;
+    this.level         = 1;
+    this.xpToNextLevel = 50;
+
+    this.morreu = false;
+  }
+
+  mover(cursors, wasd) {
+    let dx = 0, dy = 0;
+    if (cursors.left.isDown  || wasd.left.isDown)  dx = -1;
+    else if (cursors.right.isDown || wasd.right.isDown) dx =  1;
+    if (cursors.up.isDown    || wasd.up.isDown)    dy = -1;
+    else if (cursors.down.isDown  || wasd.down.isDown)  dy =  1;
+    const len = Math.hypot(dx, dy) || 1;
+    this.setVelocity((dx / len) * this.speed, (dy / len) * this.speed);
+
+    const ptr = this.scene.input.activePointer;
+    const wp  = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
+    this.setFlipX(wp.x < this.x);
+  }
+
+  levaDano(amount) {
+    if (this.iFrames || this.morreu) return false;
+    this.hp -= amount;
+    this.scene.cameras.main.shake(180, 0.012);
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.morreu = true;
+      return true;
+    }
+    this.iFrames = true;
+    this.scene.tweens.add({
+      targets: this,
+      alpha: { from: 0.3, to: 1 },
+      duration: 150,
+      repeat: Math.floor(this.iframeDuration / 150),
+      yoyo: true,
+      onComplete: () => { this.setAlpha(1); this.iFrames = false; },
+    });
+    return false;
+  }
+
+  // Retorna true se subiu de nível
+  ganharXP(amount) {
+    this.xp += amount;
+    return this.xp >= this.xpToNextLevel;
+  }
+
+  // Aplica a subida de nível e retorna o novo nível
+  subirNivel() {
+    const excesso      = this.xp - this.xpToNextLevel;
+    this.level++;
+    this.xpToNextLevel = 50 * this.level;   // 100, 150, 200, 250...
+    this.xp            = Math.max(0, excesso);
+    return this.level;
+  }
+
+  aplicarUpgrade(key) {
+    switch (key) {
+      case 'velocidade': this.speed          += 30; break;
+      case 'cadencia':   this.axeCooldown     = Math.max(100, this.axeCooldown - 80); break;
+      case 'vida':
+        this.maxHP += 25;
+        this.hp     = Math.min(this.hp + 25, this.maxHP);
+        break;
+      case 'machado':    this.axeSpeed       += 80;  break;
+      case 'protecao':   this.iframeDuration += 400; break;
+    }
+  }
+
+  tentarDisparar(time, axes) {
+    const ptr = this.scene.input.activePointer;
+    if (ptr.isDown && time > this.proximoDisparo) {
+      const wp = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      this._criarMachado(wp.x, wp.y, axes);
+      this.proximoDisparo = time + this.axeCooldown;
+    }
+  }
+
+  _criarMachado(tx, ty, axes) {
+    const m = axes.create(this.x, this.y, 'machado');
+    m.setDepth(5).setAngularVelocity(720);
+    this.scene.physics.moveTo(m, tx, ty, this.axeSpeed);
+    this.scene.time.delayedCall(this.axeLifespan, () => { if (m.active) m.destroy(); });
+  }
+}

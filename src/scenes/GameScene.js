@@ -1,47 +1,26 @@
 import { t } from '../i18n/i18n.js';
+import Player from '../entities/Player.js';
+import Enemy  from '../entities/Enemy.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   static get TEMPO_VITORIA() { return 180; }
 
-  static get ENEMY_TYPES() {
-    return {
-      draugr: { texture: 'draugr', speed: 70,  hp: 1, xp: 10 },
-      lobo:   { texture: 'lobo',   speed: 140, hp: 1, xp: 8  },
-      jotunn: { texture: 'jotunn', speed: 45,  hp: 3, xp: 30 },
-    };
-  }
-
   static get POOL_UPGRADES() {
     return [
       { key: 'velocidade', nome: 'Sowilo', letra: 'S', descKey: 'upg_velocidade' },
-      { key: 'cadencia',   nome: 'Tiwaz',  letra: 'T', descKey: 'upg_cadencia' },
-      { key: 'vida',       nome: 'Fehu',   letra: 'F', descKey: 'upg_vida' },
-      { key: 'machado',    nome: 'Kenaz',  letra: 'K', descKey: 'upg_machado' },
-      { key: 'protecao',   nome: 'Algiz',  letra: 'Z', descKey: 'upg_protecao' },
+      { key: 'cadencia',   nome: 'Tiwaz',  letra: 'T', descKey: 'upg_cadencia'  },
+      { key: 'vida',       nome: 'Fehu',   letra: 'F', descKey: 'upg_vida'      },
+      { key: 'machado',    nome: 'Kenaz',  letra: 'K', descKey: 'upg_machado'   },
+      { key: 'protecao',   nome: 'Algiz',  letra: 'Z', descKey: 'upg_protecao'  },
     ];
   }
 
   create() {
-    this.kills   = 0;
-    this.morreu  = false;
-    this.venceu  = false;
-    this.iFrames = false;
-    this.proximoDisparo = 0;
-
-    this.playerSpeed    = 220;
-    this.maxHP          = 100;
-    this.playerHP       = 100;
-    this.iframeDuration = 1000;
-    this.axeSpeed       = 480;
-    this.axeCooldown    = 350;
-    this.axeLifespan    = 1500;
-
-    this.playerXP      = 0;
-    this.level         = 1;
-    this.xpToNextLevel = 50;
-    this.elapsedTime   = 0;
+    this.kills       = 0;
+    this.venceu      = false;
+    this.elapsedTime = 0;
 
     this.criarFundo();
     this.criarJogador();
@@ -55,7 +34,7 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('upgradeChosen', (key) => this.aplicarUpgrade(key));
   }
 
-  // ---- SETUP (texturas já existem, vêm do PreloadScene) ----
+  // ---- SETUP ----
 
   criarFundo() {
     this.add.tileSprite(0, 0, 2400, 2400, 'grelha').setOrigin(0, 0);
@@ -63,9 +42,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   criarJogador() {
-    this.player = this.physics.add.sprite(1200, 1200, 'heroi');
-    this.player.setCollideWorldBounds(true);
-    this.player.setDepth(10);
+    this.player = new Player(this, 1200, 1200);
   }
 
   criarControlos() {
@@ -135,7 +112,7 @@ export default class GameScene extends Phaser.Scene {
       delay: 1000,
       loop: true,
       callback: () => {
-        if (this.morreu || this.venceu) return;
+        if (this.player.morreu || this.venceu) return;
         this.elapsedTime++;
         this.timerText.setText(this.formatarTempo(this.elapsedTime));
 
@@ -152,7 +129,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     const spawnLoop = () => {
-      if (this.morreu || this.venceu) return;
+      if (this.player.morreu || this.venceu) return;
       this.spawnOnda();
       const delay = Math.max(400, 900 - Math.floor(this.elapsedTime / 30) * 80);
       this.time.delayedCall(delay, spawnLoop);
@@ -174,120 +151,79 @@ export default class GameScene extends Phaser.Scene {
   }
 
   tiposDisponiveis() {
-    const t2 = ['draugr'];
-    if (this.elapsedTime >= 45) t2.push('lobo');
-    if (this.elapsedTime >= 90) t2.push('jotunn');
-    return t2;
+    const tipos = ['draugr'];
+    if (this.elapsedTime >= 45) tipos.push('lobo');
+    if (this.elapsedTime >= 90) tipos.push('jotunn');
+    return tipos;
   }
 
   spawnInimigo(tipoKey, angulo) {
-    const tipo = GameScene.ENEMY_TYPES[tipoKey];
-    const x = this.player.x + Math.cos(angulo) * 620;
-    const y = this.player.y + Math.sin(angulo) * 620;
-    const e = this.enemies.create(x, y, tipo.texture);
-    e.setCollideWorldBounds(true);
-    e.hp = tipo.hp; e.speed = tipo.speed; e.tipoKey = tipoKey; e.xpValue = tipo.xp;
+    const tipo = Enemy.TYPES[tipoKey];
+    const x    = this.player.x + Math.cos(angulo) * 620;
+    const y    = this.player.y + Math.sin(angulo) * 620;
+    const e    = new Enemy(this, x, y, tipo.texture);
+    this.enemies.add(e);
+    e.init(tipoKey);
   }
 
   // ---- LÓGICA ----
 
-  dispararMachado(tx, ty) {
-    const m = this.axes.create(this.player.x, this.player.y, 'machado');
-    m.setDepth(5);
-    m.setAngularVelocity(720);
-    this.physics.moveTo(m, tx, ty, this.axeSpeed);
-    this.time.delayedCall(this.axeLifespan, () => { if (m.active) m.destroy(); });
-  }
-
   machadoAcerta(machado, enemy) {
     machado.destroy();
-    enemy.hp--;
-    if (enemy.hp <= 0) {
-      const { x, y, xpValue, tipoKey } = enemy;
+    const morreu = enemy.receberDano();
+    if (morreu) {
+      const { x, y, gemas } = enemy;
+      enemy.particulasMorte();
       enemy.destroy();
       this.kills++;
       this.killsText.setText(`${t('abates')}: ${this.kills}`);
-      this.particulasMorte(x, y, tipoKey);
-      const n = (tipoKey === 'jotunn') ? 3 : 1;
-      for (let i = 0; i < n; i++) {
-        this.gems.create(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), 'gema');
+      for (let i = 0; i < gemas; i++) {
+        this.gems.create(
+          x + Phaser.Math.Between(-12, 12),
+          y + Phaser.Math.Between(-12, 12),
+          'gema'
+        );
       }
-      this.ganharXP(xpValue || 10);
     } else {
-      enemy.setTint(0xff5555);
-      this.time.delayedCall(150, () => { if (enemy.active) enemy.clearTint(); });
-      this.mostrarDano(enemy.x, enemy.y);
+      enemy.mostrarDano();
     }
   }
 
   recolherGema(gema) {
     gema.destroy();
-    this.ganharXP(10);
-  }
-
-  ganharXP(amount) {
-    this.playerXP += amount;
+    if (this.player.ganharXP(10)) {
+      this.player.subirNivel();
+      this.levelText.setText(`${t('nivel')} ${this.player.level}`);
+      this.cameras.main.flash(300, 242, 193, 78, false);
+      const pool = Phaser.Utils.Array.Shuffle([...GameScene.POOL_UPGRADES]);
+      this.scene.pause('GameScene');
+      this.scene.launch('UpgradeScene', { level: this.player.level, upgrades: pool.slice(0, 3) });
+    }
     this.atualizarXPBar();
-    if (this.playerXP >= this.xpToNextLevel) this.subirNivel();
-  }
-
-  atualizarXPBar() {
-    this.xpBar.width = 120 * Math.min(1, this.playerXP / this.xpToNextLevel);
-  }
-
-  subirNivel() {
-    const excesso = this.playerXP - this.xpToNextLevel;
-    this.level++;
-    this.xpToNextLevel = 50 + (this.level - 1) * 30;
-    this.playerXP      = Math.max(0, excesso);
-    this.xpBar.width   = 0;
-    this.levelText.setText(`${t('nivel')} ${this.level}`);
-
-    this.cameras.main.flash(300, 242, 193, 78, false);
-
-    const pool = Phaser.Utils.Array.Shuffle([...GameScene.POOL_UPGRADES]);
-    this.scene.pause('GameScene');
-    this.scene.launch('UpgradeScene', { level: this.level, upgrades: pool.slice(0, 3) });
   }
 
   aplicarUpgrade(key) {
-    switch (key) {
-      case 'velocidade': this.playerSpeed  += 30; break;
-      case 'cadencia':   this.axeCooldown   = Math.max(100, this.axeCooldown - 80); break;
-      case 'vida':
-        this.maxHP    += 25;
-        this.playerHP  = Math.min(this.playerHP + 25, this.maxHP);
-        this.atualizarHPBar();
-        break;
-      case 'machado':  this.axeSpeed       += 80;  break;
-      case 'protecao': this.iframeDuration += 400; break;
-    }
+    this.player.aplicarUpgrade(key);
+    this.atualizarHPBar();
   }
 
   jogadorLevaDano() {
-    if (this.iFrames || this.morreu || this.venceu) return;
-    this.playerHP -= 20;
-    this.atualizarHPBar();
-    this.cameras.main.shake(180, 0.012);
-    if (this.playerHP <= 0) { this.morrerJogador(); return; }
-
-    this.iFrames = true;
-    this.tweens.add({
-      targets: this.player,
-      alpha: { from: 0.3, to: 1 },
-      duration: 150,
-      repeat: Math.floor(this.iframeDuration / 150),
-      yoyo: true,
-      onComplete: () => { this.player.setAlpha(1); this.iFrames = false; },
-    });
+    if (this.player.levaDano(20)) {
+      this.morrerJogador();
+    } else {
+      this.atualizarHPBar();
+    }
   }
 
   atualizarHPBar() {
-    this.hpBar.width = 120 * Math.max(0, this.playerHP / this.maxHP);
+    this.hpBar.width = 120 * Math.max(0, this.player.hp / this.player.maxHP);
+  }
+
+  atualizarXPBar() {
+    this.xpBar.width = 120 * Math.min(1, this.player.xp / this.player.xpToNextLevel);
   }
 
   morrerJogador() {
-    this.morreu = true;
     this.physics.pause();
     this.player.setTint(0xff4444);
     this.cameras.main.shake(400, 0.025);
@@ -308,35 +244,17 @@ export default class GameScene extends Phaser.Scene {
 
   // ---- EFEITOS ----
 
-  mostrarDano(x, y) {
-    const txt = this.add.text(x, y - 10, '-1', {
-      fontFamily: 'monospace', fontSize: '16px', color: '#ff6666', stroke: '#000000', strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(200);
-    this.tweens.add({ targets: txt, y: y - 50, alpha: 0, duration: 700, ease: 'Power2', onComplete: () => txt.destroy() });
-  }
-
-  particulasMorte(x, y, tipoKey) {
-    const cor = tipoKey === 'jotunn' ? 0x7ab8cc : tipoKey === 'lobo' ? 0x8a8a9a : 0x4a5d3a;
-    const num = tipoKey === 'jotunn' ? 10 : 6;
-    for (let i = 0; i < num; i++) {
-      const ang  = (i / num) * Math.PI * 2;
-      const dist = Phaser.Math.Between(20, 50);
-      const p    = this.add.circle(x, y, Phaser.Math.Between(2, 5), cor).setDepth(15);
-      this.tweens.add({
-        targets: p, x: x + Math.cos(ang) * dist, y: y + Math.sin(ang) * dist,
-        alpha: 0, scaleX: 0, scaleY: 0, duration: Phaser.Math.Between(300, 500), ease: 'Power2',
-        onComplete: () => p.destroy(),
-      });
-    }
-  }
-
   mostrarAnuncio(texto) {
     const cx = this.cameras.main.centerX;
     const cy = this.cameras.main.centerY;
     const txt = this.add.text(cx, cy - 60, texto, {
-      fontFamily: 'monospace', fontSize: '24px', color: '#f2c14e', stroke: '#000000', strokeThickness: 4,
+      fontFamily: 'monospace', fontSize: '24px', color: '#f2c14e',
+      stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
-    this.tweens.add({ targets: txt, alpha: 0, y: cy - 120, duration: 2500, ease: 'Power2', onComplete: () => txt.destroy() });
+    this.tweens.add({
+      targets: txt, alpha: 0, y: cy - 120, duration: 2500, ease: 'Power2',
+      onComplete: () => txt.destroy(),
+    });
   }
 
   formatarTempo(s) {
@@ -346,34 +264,9 @@ export default class GameScene extends Phaser.Scene {
   // ---- LOOP ----
 
   update(time) {
-    if (this.morreu || this.venceu) return;
-    this.moverJogador();
-    this.moverInimigos();
-    this.tentarDisparar(time);
-  }
-
-  moverJogador() {
-    let dx = 0, dy = 0;
-    if (this.cursors.left.isDown  || this.wasd.left.isDown)  dx = -1;
-    else if (this.cursors.right.isDown || this.wasd.right.isDown) dx =  1;
-    if (this.cursors.up.isDown    || this.wasd.up.isDown)    dy = -1;
-    else if (this.cursors.down.isDown  || this.wasd.down.isDown)  dy =  1;
-    const len = Math.hypot(dx, dy) || 1;
-    this.player.setVelocity((dx / len) * this.playerSpeed, (dy / len) * this.playerSpeed);
-    this.player.setFlipX(this.input.activePointer.worldX < this.player.x);
-  }
-
-  moverInimigos() {
-    this.enemies.getChildren().forEach((e) => {
-      if (e.active) this.physics.moveToObject(e, this.player, e.speed || 70);
-    });
-  }
-
-  tentarDisparar(time) {
-    const ptr = this.input.activePointer;
-    if (ptr.isDown && time > this.proximoDisparo) {
-      this.dispararMachado(ptr.worldX, ptr.worldY);
-      this.proximoDisparo = time + this.axeCooldown;
-    }
+    if (this.player.morreu || this.venceu) return;
+    this.player.mover(this.cursors, this.wasd);
+    this.enemies.getChildren().forEach((e) => e.moverParaJogador(this.player));
+    this.player.tentarDisparar(time, this.axes);
   }
 }
