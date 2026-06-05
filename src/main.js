@@ -1,6 +1,11 @@
-
-import GameScene    from './scenes/GameScene.js';
-import GameOverScene from './scenes/GameOverScene.js';
+import BootScene         from './scenes/BootScene.js';
+import PreloadScene      from './scenes/PreloadScene.js';
+import MenuScene         from './scenes/MenuScene.js';
+import InstructionsScene from './scenes/InstructionsScene.js';
+import GameScene         from './scenes/GameScene.js';
+import UpgradeScene      from './scenes/UpgradeScene.js';
+import GameOverScene     from './scenes/GameOverScene.js';
+import VictoryScene      from './scenes/VictoryScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -14,10 +19,12 @@ const config = {
   },
   physics: {
     default: 'arcade',
-    arcade: { debug: false }, // muda para true para ver caixas de colisao
+    arcade: { debug: false },
   },
-  // Ordem importa: a primeira cena arranca automaticamente
-  scene: [GameScene, GameOverScene],
+  scene: [
+    BootScene, PreloadScene, MenuScene, InstructionsScene,
+    GameScene, UpgradeScene, GameOverScene, VictoryScene,
+  ],
 };
 
 new Phaser.Game(config);
