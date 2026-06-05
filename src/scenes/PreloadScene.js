@@ -36,12 +36,16 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
+    this.load.image('menu_bg',  'src/assets/images/menu.png');
   }
 
   create() {
     // Regista as linguas carregadas
     registarIdioma('pt', this.cache.json.get('pt'));
     registarIdioma('en', this.cache.json.get('en'));
+
+    // Filtro suave para a imagem do menu (pixelArt mode usa NEAREST por defeito)
+    this.textures.get('menu_bg').setFilter(Phaser.Textures.LINEAR);
 
     // Gera as texturas-placeholder (apaga isto quando usares sprites reais)
     gerarTexturas(this);
@@ -53,6 +57,69 @@ export default class PreloadScene extends Phaser.Scene {
 // --- Geracao de texturas por codigo (placeholder) ---
 function gerarTexturas(scene) {
   let g;
+
+  // Logo Vegvisir para o menu
+  {
+    const sz = 160;
+    const c  = sz / 2;
+    const r  = 68;
+    g = scene.add.graphics();
+
+    // Halo exterior suave
+    g.fillStyle(0xf2c14e, 0.05);
+    g.fillCircle(c, c, r + 14);
+    g.fillStyle(0xf2c14e, 0.08);
+    g.fillCircle(c, c, r + 6);
+
+    // Anel exterior
+    g.lineStyle(3, 0xf2c14e, 0.9);
+    g.strokeCircle(c, c, r);
+
+    // Anel interior
+    g.lineStyle(1.5, 0xf2c14e, 0.5);
+    g.strokeCircle(c, c, r * 0.42);
+
+    // 8 bracos do Vegvisir
+    for (let i = 0; i < 8; i++) {
+      const a   = (i * 45) * (Math.PI / 180);
+      const cos = Math.cos(a);
+      const sin = Math.sin(a);
+      const x1  = c + cos * (r * 0.42);
+      const y1  = c + sin * (r * 0.42);
+      const x2  = c + cos * (r * 0.88);
+      const y2  = c + sin * (r * 0.88);
+      const cardinal = i % 2 === 0;
+
+      g.lineStyle(cardinal ? 2 : 1.5, 0xf2c14e, cardinal ? 0.9 : 0.7);
+      g.lineBetween(x1, y1, x2, y2);
+
+      // Decoracao na ponta
+      const pa  = a + Math.PI / 2;
+      const tx  = c + cos * (r * 0.82);
+      const ty  = c + sin * (r * 0.82);
+      g.lineStyle(1.5, 0xf2c14e, 0.7);
+      if (cardinal) {
+        // Barra transversal
+        g.lineBetween(tx + Math.cos(pa) * 7, ty + Math.sin(pa) * 7,
+                      tx - Math.cos(pa) * 7, ty - Math.sin(pa) * 7);
+      } else {
+        // Bifurcacao
+        const bx = c + cos * (r * 0.66);
+        const by = c + sin * (r * 0.66);
+        g.lineBetween(bx, by, tx + Math.cos(pa) * 6, ty + Math.sin(pa) * 6);
+        g.lineBetween(bx, by, tx - Math.cos(pa) * 6, ty - Math.sin(pa) * 6);
+      }
+    }
+
+    // Ponto central
+    g.fillStyle(0xf2c14e, 1);
+    g.fillCircle(c, c, 5);
+    g.lineStyle(1.5, 0xf2c14e, 0.4);
+    g.strokeCircle(c, c, 11);
+
+    g.generateTexture('logo_menu', sz, sz);
+    g.destroy();
+  }
 
   // Grelha do chao
   g = scene.add.graphics();
