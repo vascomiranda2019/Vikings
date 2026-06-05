@@ -13,14 +13,17 @@ export default class GameScene extends Phaser.Scene {
 
   static get POOL_UPGRADES() {
     return [
-      { key: 'velocidade', nome: 'Sowilo', letra: 'S', descKey: 'upg_velocidade' },
-      { key: 'cadencia',   nome: 'Tiwaz',  letra: 'T', descKey: 'upg_cadencia'  },
-      { key: 'vida',       nome: 'Fehu',   letra: 'F', descKey: 'upg_vida'      },
-      { key: 'machado',    nome: 'Kenaz',  letra: 'K', descKey: 'upg_machado'   },
-      { key: 'protecao',   nome: 'Algiz',  letra: 'Z', descKey: 'upg_protecao'  },
-      { key: 'animal',     nome: 'Ansuz',  letra: 'A', descKey: 'upg_animal'    },
-      { key: 'orbital',    nome: 'Jera',   letra: 'J', descKey: 'upg_orbital'   },
-      { key: 'escudo',     nome: 'Eihwaz', letra: 'E', descKey: 'upg_escudo'    },
+      { key: 'velocidade', nome: 'Sowilo',   letra: 'S', descKey: 'upg_velocidade' },
+      { key: 'cadencia',   nome: 'Tiwaz',    letra: 'T', descKey: 'upg_cadencia'  },
+      { key: 'vida',       nome: 'Fehu',     letra: 'F', descKey: 'upg_vida'      },
+      { key: 'machado',    nome: 'Kenaz',    letra: 'K', descKey: 'upg_machado'   },
+      { key: 'protecao',   nome: 'Algiz',    letra: 'Z', descKey: 'upg_protecao'  },
+      { key: 'animal',     nome: 'Ansuz',    letra: 'A', descKey: 'upg_animal'    },
+      { key: 'orbital',    nome: 'Jera',     letra: 'J', descKey: 'upg_orbital'   },
+      { key: 'escudo',     nome: 'Eihwaz',   letra: 'E', descKey: 'upg_escudo'    },
+      { key: 'multishot',  nome: 'Wunjo',    letra: 'W', descKey: 'upg_multishot' },
+      { key: 'perfuracao', nome: 'Thurisaz', letra: 'Þ', descKey: 'upg_perfuracao' },
+      { key: 'iman',       nome: 'Laguz',    letra: 'L', descKey: 'upg_iman'      },
     ];
   }
 
@@ -198,8 +201,20 @@ export default class GameScene extends Phaser.Scene {
   // ---- LÓGICA ----
 
   machadoAcerta(machado, enemy) {
-    machado.destroy();
+    // Um machado nao acerta duas vezes no mesmo inimigo. Importante com a
+    // perfuracao, senao enquanto o atravessa daria dano em todos os frames.
+    if (!machado.jaAcertou) machado.jaAcertou = new Set();
+    if (machado.jaAcertou.has(enemy)) return;
+    machado.jaAcertou.add(enemy);
+
     this.acertarInimigo(enemy);
+
+    // Se ainda tiver perfuracoes, atravessa; caso contrario desaparece.
+    if (machado.golpesRestantes > 0) {
+      machado.golpesRestantes--;
+    } else {
+      machado.destroy();
+    }
   }
 
   fireballAcerta(fireball, enemy) {
@@ -279,7 +294,7 @@ export default class GameScene extends Phaser.Scene {
     switch (key) {
       case 'animal':  this.adicionarCompanion(); break;
       case 'orbital': this.adicionarOrbital();   break;
-      default:        this.player.aplicarUpgrade(key); // stats e escudo
+      default:        this.player.aplicarUpgrade(key); // stats, escudo, multishot, perfuracao, iman
     }
     this.atualizarHPBar();
   }
@@ -382,6 +397,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.atualizarOrbitais(delta);
     this.atualizarEscudo();
+    this.atrairGemas();
   }
 
   // Faz os machados girarem a volta do jogador, espacados por igual.
@@ -404,5 +420,16 @@ export default class GameScene extends Phaser.Scene {
     this.escudoVisual.setVisible(ativo);
     if (ativo) this.escudoVisual.setPosition(this.player.x, this.player.y);
     this.shieldText.setText(ativo ? t('escudo_hud') : '');
+  }
+
+  // Puxa para o jogador as gemas que estiverem dentro do alcance do iman.
+  atrairGemas() {
+    const range = this.player.magnetRange;
+    if (range <= 0) return;
+    this.gems.getChildren().forEach((gem) => {
+      if (!gem.active) return;
+      const d = Phaser.Math.Distance.Between(gem.x, gem.y, this.player.x, this.player.y);
+      if (d < range) this.physics.moveToObject(gem, this.player, 320);
+    });
   }
 }

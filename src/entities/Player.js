@@ -15,6 +15,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.axeLifespan    = 1500;
     this.proximoDisparo = 0;
 
+    // Runas de ataque/recolha
+    this.projeteis   = 1;   // machados por disparo (Wunjo)
+    this.pierce      = 0;   // inimigos extra que cada machado atravessa (Thurisaz)
+    this.magnetRange = 0;   // raio a que as gemas sao atraidas (Laguz)
+
     this.xp            = 0;
     this.level         = 1;
     this.xpToNextLevel = 50;
@@ -102,25 +107,39 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       case 'machado':    this.axeSpeed       += 80;  break;
       case 'protecao':   this.iframeDuration += 400; break;
       case 'escudo':     this.shield = 1;            break;  // ganha um escudo
+      case 'multishot':  this.projeteis = Math.min(this.projeteis + 1, 6); break;
+      case 'perfuracao': this.pierce    = Math.min(this.pierce + 1, 4);    break;
+      case 'iman':       this.magnetRange += 120;                          break;
     }
   }
 
   tentarDisparar(time, axes) {
     const ptr = this.scene.input.activePointer;
-    if (ptr.isDown && time > this.proximoDisparo) {
-      const wp = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
-      this._criarMachado(wp.x, wp.y, axes);
-      this.proximoDisparo = time + this.axeCooldown;
-    }
-  }
+    if (!ptr.isDown || time <= this.proximoDisparo) return;
 
-  _criarMachado(tx, ty, axes) {
-    const m = axes.create(this.x, this.y, 'machado');
-    m.setDepth(5).setAngularVelocity(720);
-    this.scene.physics.moveTo(m, tx, ty, this.axeSpeed);
-    this.scene.time.delayedCall(this.axeLifespan, () => { if (m.active) m.destroy(); });
+    const wp      = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
+    const baseAng = Math.atan2(wp.y - this.y, wp.x - this.x);
+    const n       = this.projeteis;
+    const spread  = 0.18;                     // radianos entre machados adjacentes
+    const inicio  = -((n - 1) / 2) * spread;  // centra o leque na direcao da mira
+
+    for (let i = 0; i < n; i++) {
+      this._criarMachado(baseAng + inicio + i * spread, axes);
+    }
+
+    // Som uma vez por rajada (nao por machado), para nao ficar demasiado alto.
     if (this.scene.cache.audio.exists('machado')) {
       this.scene.sound.play('machado', { volume: 0.35 });
     }
+
+    this.proximoDisparo = time + this.axeCooldown;
+  }
+
+  _criarMachado(angulo, axes) {
+    const m = axes.create(this.x, this.y, 'machado');
+    m.setDepth(5).setAngularVelocity(720);
+    m.setVelocity(Math.cos(angulo) * this.axeSpeed, Math.sin(angulo) * this.axeSpeed);
+    m.golpesRestantes = this.pierce;   // quantos inimigos ainda pode atravessar
+    this.scene.time.delayedCall(this.axeLifespan, () => { if (m.active) m.destroy(); });
   }
 }
