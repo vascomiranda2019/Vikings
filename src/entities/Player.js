@@ -19,6 +19,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.level         = 1;
     this.xpToNextLevel = 50;
 
+    // Escudo unico: vale 1 e nao se acumula nem regenera sozinho. Quando
+    // parte, fica a zero ate o jogador voltar a escolher a runa Eihwaz.
+    this.shield = 0;
+
     this.morreu = false;
   }
 
@@ -38,6 +42,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   levaDano(amount) {
     if (this.iFrames || this.morreu) return false;
+
+    // Se houver escudo, ele absorve o golpe inteiro e parte (fica a zero).
+    if (this.shield > 0) {
+      this.shield = 0;
+      this.scene.cameras.main.shake(120, 0.008);
+      this._ativarIFrames();
+      return false;
+    }
+
     this.hp -= amount;
     this.scene.cameras.main.shake(180, 0.012);
     if (this.hp <= 0) {
@@ -45,6 +58,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.morreu = true;
       return true;
     }
+    this._ativarIFrames();
+    return false;
+  }
+
+  // Pisca o jogador durante o periodo de invencibilidade. Usado tanto quando
+  // se leva dano a serio como quando um escudo absorve um golpe.
+  _ativarIFrames() {
     this.iFrames = true;
     this.scene.tweens.add({
       targets: this,
@@ -54,7 +74,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       yoyo: true,
       onComplete: () => { this.setAlpha(1); this.iFrames = false; },
     });
-    return false;
   }
 
   // Retorna true se subiu de nível
@@ -82,6 +101,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       case 'machado':    this.axeSpeed       += 80;  break;
       case 'protecao':   this.iframeDuration += 400; break;
+      case 'escudo':     this.shield = 1;            break;  // ganha um escudo
     }
   }
 

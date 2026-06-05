@@ -1,12 +1,15 @@
 import { t } from '../i18n/i18n.js';
-import Player from '../entities/Player.js';
-import Enemy  from '../entities/Enemy.js';
-import Gem    from '../entities/Gem.js';
+import Player    from '../entities/Player.js';
+import Enemy     from '../entities/Enemy.js';
+import Gem       from '../entities/Gem.js';
+import Companion from '../entities/Companion.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   static get TEMPO_VITORIA() { return 180; }
+  static get MAX_CORVOS()    { return 2; }
+  static get MAX_ORBITAIS()  { return 3; }
 
   static get POOL_UPGRADES() {
     return [
@@ -15,13 +18,21 @@ export default class GameScene extends Phaser.Scene {
       { key: 'vida',       nome: 'Fehu',   letra: 'F', descKey: 'upg_vida'      },
       { key: 'machado',    nome: 'Kenaz',  letra: 'K', descKey: 'upg_machado'   },
       { key: 'protecao',   nome: 'Algiz',  letra: 'Z', descKey: 'upg_protecao'  },
+      { key: 'animal',     nome: 'Ansuz',  letra: 'A', descKey: 'upg_animal'    },
+      { key: 'orbital',    nome: 'Jera',   letra: 'J', descKey: 'upg_orbital'   },
+      { key: 'escudo',     nome: 'Eihwaz', letra: 'E', descKey: 'upg_escudo'    },
     ];
   }
 
   create() {
-    this.kills       = 0;
-    this.venceu      = false;
-    this.elapsedTime = 0;
+    this.kills        = 0;
+    this.venceu       = false;
+    this.elapsedTime  = 0;
+
+    this.companions   = [];      // corvos aliados (max 2)
+    this.orbitalCount = 0;       // quantos machados a girar (max 3)
+    this.orbitalAngle = 0;       // angulo atual da rotacao
+    this.orbitalSpeed = 0.005;   // velocidade da rotacao (sobe depois dos 3)
 
     this.criarFundo();
     this.criarJogador();
@@ -44,6 +55,12 @@ export default class GameScene extends Phaser.Scene {
 
   criarJogador() {
     this.player = new Player(this, 1200, 1200);
+
+    // Anel de escudo que aparece a volta do viking quando ele tem escudo.
+    this.escudoVisual = this.add.circle(this.player.x, this.player.y, 24, 0x9fe0ff, 0)
+      .setStrokeStyle(3, 0x9fe0ff, 0.9)
+      .setDepth(8)
+      .setVisible(false);
   }
 
   criarControlos() {
@@ -62,14 +79,20 @@ export default class GameScene extends Phaser.Scene {
   }
 
   criarGrupos() {
-    this.enemies = this.physics.add.group();
-    this.axes    = this.physics.add.group();
-    this.gems    = this.physics.add.group();
+    this.enemies   = this.physics.add.group();
+    this.axes      = this.physics.add.group();
+    this.gems      = this.physics.add.group();
+    this.orbitals  = this.physics.add.group();
+    this.fireballs = this.physics.add.group();  // bolas de fogo dos corvos
   }
 
   criarColisoes() {
     this.physics.add.overlap(this.axes, this.enemies,
       (axe, enemy) => this.machadoAcerta(axe, enemy), null, this);
+    this.physics.add.overlap(this.fireballs, this.enemies,
+      (fb, enemy) => this.fireballAcerta(fb, enemy), null, this);
+    this.physics.add.overlap(this.orbitals, this.enemies,
+      (orb, enemy) => this.orbitalAcerta(orb, enemy), null, this);
     this.physics.add.overlap(this.player, this.enemies,
       () => this.jogadorLevaDano(), null, this);
     this.physics.add.overlap(this.player, this.gems,
@@ -106,6 +129,11 @@ export default class GameScene extends Phaser.Scene {
     }).setScrollFactor(0).setDepth(100);
     this.xpBarBg = this.add.rectangle(40, 82, 120, 10, 0x4a3800).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100);
     this.xpBar   = this.add.rectangle(40, 82, 0,   10, 0xf2c14e).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100);
+
+    // Indicador de escudo (so se ve quando esta ativo).
+    this.shieldText = this.add.text(16, 96, '', {
+      fontFamily: 'monospace', fontSize: '12px', color: '#9fe0ff',
+    }).setScrollFactor(0).setDepth(100);
   }
 
   iniciarTimers() {
@@ -171,6 +199,27 @@ export default class GameScene extends Phaser.Scene {
 
   machadoAcerta(machado, enemy) {
     machado.destroy();
+    this.acertarInimigo(enemy);
+  }
+
+  fireballAcerta(fireball, enemy) {
+    fireball.destroy();
+    this.acertarInimigo(enemy);
+  }
+
+  // Os orbitais nao se destroem ao tocar; em vez disso cada inimigo fica
+  // imune por uns instantes para nao levar dano em todos os frames.
+  orbitalAcerta(orbital, enemy) {
+    const agora = this.time.now;
+    if (enemy.orbitalImmuneUntil && agora < enemy.orbitalImmuneUntil) return;
+    enemy.orbitalImmuneUntil = agora + 350;
+    this.acertarInimigo(enemy);
+  }
+
+  // Trata de um acerto num inimigo: tira vida e, se morrer, conta o abate,
+  // faz as particulas e larga as gemas. Usado pelos machados, pelas bolas
+  // de fogo e pelos orbitais.
+  acertarInimigo(enemy) {
     const morreu = enemy.receberDano();
     if (morreu) {
       const { x, y, gemas } = enemy;
@@ -205,7 +254,8 @@ export default class GameScene extends Phaser.Scene {
       this.player.subirNivel();
       this.levelText.setText(`${t('nivel')} ${this.player.level}`);
       this.cameras.main.flash(300, 242, 193, 78, false);
-      const pool = Phaser.Utils.Array.Shuffle([...GameScene.POOL_UPGRADES]);
+      // So mostra runas que façam sentido para o estado atual do jogador.
+      const pool = Phaser.Utils.Array.Shuffle([...this.runasDisponiveis()]);
       this.scene.pause('GameScene');
       this.scene.launch('UpgradeScene', { level: this.player.level, upgrades: pool.slice(0, 3) });
     }
@@ -214,9 +264,47 @@ export default class GameScene extends Phaser.Scene {
     // this.sound.play('pickup');
   }
 
+  // Filtra o pool conforme o estado atual: o escudo so aparece se nao tiveres
+  // nenhum, e o animal so ate ao limite de corvos. As restantes aparecem sempre
+  // (a orbital mantem-se util porque, depois dos 3 machados, acelera a rotacao).
+  runasDisponiveis() {
+    return GameScene.POOL_UPGRADES.filter((u) => {
+      if (u.key === 'escudo') return this.player.shield === 0;
+      if (u.key === 'animal') return this.companions.length < GameScene.MAX_CORVOS;
+      return true;
+    });
+  }
+
   aplicarUpgrade(key) {
-    this.player.aplicarUpgrade(key);
+    switch (key) {
+      case 'animal':  this.adicionarCompanion(); break;
+      case 'orbital': this.adicionarOrbital();   break;
+      default:        this.player.aplicarUpgrade(key); // stats e escudo
+    }
     this.atualizarHPBar();
+  }
+
+  // Cria mais um corvo aliado ao pe do jogador, ate ao limite.
+  adicionarCompanion() {
+    if (this.companions.length >= GameScene.MAX_CORVOS) return;
+    const c = new Companion(this, this.player.x, this.player.y);
+    this.companions.push(c);
+  }
+
+  // Ate aos 3 machados, cada runa adiciona mais um. A partir dai, a mesma
+  // runa passa a acelerar a rotacao em vez de acrescentar machados.
+  adicionarOrbital() {
+    if (this.orbitalCount < GameScene.MAX_ORBITAIS) {
+      this.orbitalCount++;
+      this.orbitals.clear(true, true);
+      for (let i = 0; i < this.orbitalCount; i++) {
+        const o = this.orbitals.create(this.player.x, this.player.y, 'machado');
+        o.setDepth(6).setScale(0.9);
+        if (o.body) o.body.setAllowGravity(false);
+      }
+    } else {
+      this.orbitalSpeed += 0.0035;
+    }
   }
 
   jogadorLevaDano() {
@@ -281,10 +369,40 @@ export default class GameScene extends Phaser.Scene {
 
   // ---- LOOP ----
 
-  update(time) {
+  update(time, delta) {
     if (this.player.morreu || this.venceu) return;
     this.player.mover(this.cursors, this.wasd);
     this.enemies.getChildren().forEach((e) => e.moverParaJogador(this.player));
     this.player.tentarDisparar(time, this.axes);
+
+    this.companions.forEach((c) => {
+      c.seguir(this.player);
+      c.tentarDisparar(time, this.enemies, this.fireballs);
+    });
+
+    this.atualizarOrbitais(delta);
+    this.atualizarEscudo();
+  }
+
+  // Faz os machados girarem a volta do jogador, espacados por igual.
+  atualizarOrbitais(delta) {
+    if (this.orbitalCount === 0) return;
+    this.orbitalAngle += delta * this.orbitalSpeed;
+    const raio   = 90;
+    const filhos = this.orbitals.getChildren();
+    filhos.forEach((o, i) => {
+      const ang = this.orbitalAngle + (i / filhos.length) * Math.PI * 2;
+      o.x = this.player.x + Math.cos(ang) * raio;
+      o.y = this.player.y + Math.sin(ang) * raio;
+      o.rotation += 0.3;
+    });
+  }
+
+  // Mostra ou esconde o anel de escudo e o texto no HUD.
+  atualizarEscudo() {
+    const ativo = this.player.shield > 0;
+    this.escudoVisual.setVisible(ativo);
+    if (ativo) this.escudoVisual.setPosition(this.player.x, this.player.y);
+    this.shieldText.setText(ativo ? t('escudo_hud') : '');
   }
 }

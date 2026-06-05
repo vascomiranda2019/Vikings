@@ -194,6 +194,33 @@ function gerarTexturas(scene) {
   g.generateTexture('machado', 28, 28);
   g.destroy();
 
+  // Corvo aliado (o companheiro). Preto, no espirito dos corvos de Odin,
+  // virado para a direita com bico dourado e um olho vermelho.
+  g = scene.add.graphics();
+  g.fillStyle(0x1a1a22, 1);
+  g.fillEllipse(11, 9, 18, 11);          // corpo
+  g.fillTriangle(1, 9, 8, 4, 8, 14);     // cauda
+  g.fillStyle(0x2c2c3a, 1);
+  g.fillEllipse(14, 7, 9, 6);            // asa/cabeca mais clara
+  g.fillStyle(0xe0a020, 1);
+  g.fillTriangle(19, 6, 25, 8, 19, 10);  // bico
+  g.fillStyle(0xff5555, 1);
+  g.fillCircle(16, 6, 1.3);              // olho
+  g.generateTexture('corvo', 26, 18);
+  g.destroy();
+
+  // Bola de fogo (projetil do corvo). Halo vermelho por fora, laranja no
+  // meio e um nucleo amarelo brilhante.
+  g = scene.add.graphics();
+  g.fillStyle(0xff3b00, 1);
+  g.fillCircle(8, 8, 8);
+  g.fillStyle(0xff8c1a, 1);
+  g.fillCircle(8, 8, 5.5);
+  g.fillStyle(0xffe27a, 1);
+  g.fillCircle(8, 8, 3);
+  g.generateTexture('bolafogo', 16, 16);
+  g.destroy();
+
   // Gemas de alma. Sao tres tipos: pequena (verde, pouco XP), media (azul)
   // e grande (dourada, muito XP). O raio muda para se distinguirem bem em jogo.
   const gemas = [
