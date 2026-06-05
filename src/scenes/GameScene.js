@@ -1,6 +1,7 @@
 import { t } from '../i18n/i18n.js';
 import Player from '../entities/Player.js';
 import Enemy  from '../entities/Enemy.js';
+import Gem    from '../entities/Gem.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -177,21 +178,30 @@ export default class GameScene extends Phaser.Scene {
       enemy.destroy();
       this.kills++;
       this.killsText.setText(`${t('abates')}: ${this.kills}`);
-      for (let i = 0; i < gemas; i++) {
-        this.gems.create(
-          x + Phaser.Math.Between(-12, 12),
-          y + Phaser.Math.Between(-12, 12),
-          'gema'
-        );
-      }
+      this.largarGemas(x, y, gemas);
     } else {
       enemy.mostrarDano();
     }
   }
 
+  // Larga 'quantidade' gemas no local do inimigo. Cada gema sorteia o seu
+  // proprio tipo, por isso um jotunn deixa varias verdes e, com sorte, uma
+  // azul ou dourada a mistura.
+  largarGemas(x, y, quantidade) {
+    for (let i = 0; i < quantidade; i++) {
+      const g = new Gem(
+        this,
+        x + Phaser.Math.Between(-12, 12),
+        y + Phaser.Math.Between(-12, 12)
+      );
+      this.gems.add(g);
+    }
+  }
+
   recolherGema(gema) {
+    const xp = gema.xpValue || 5;
     gema.destroy();
-    if (this.player.ganharXP(10)) {
+    if (this.player.ganharXP(xp)) {
       this.player.subirNivel();
       this.levelText.setText(`${t('nivel')} ${this.player.level}`);
       this.cameras.main.flash(300, 242, 193, 78, false);
@@ -200,6 +210,8 @@ export default class GameScene extends Phaser.Scene {
       this.scene.launch('UpgradeScene', { level: this.player.level, upgrades: pool.slice(0, 3) });
     }
     this.atualizarXPBar();
+    // Som de apanhar gema, quando tivermos audio:
+    // this.sound.play('pickup');
   }
 
   aplicarUpgrade(key) {

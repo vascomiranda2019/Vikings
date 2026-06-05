@@ -122,12 +122,20 @@ function gerarTexturas(scene) {
   g.generateTexture('machado', 28, 28);
   g.destroy();
 
-  // Gema
-  g = scene.add.graphics();
-  g.fillStyle(0xf2c14e, 1);
-  g.fillCircle(7, 7, 7);
-  g.fillStyle(0xfce8a0, 0.8);
-  g.fillCircle(5, 5, 3);
-  g.generateTexture('gema', 14, 14);
-  g.destroy();
+  // Gemas de alma. Sao tres tipos: pequena (verde, pouco XP), media (azul)
+  // e grande (dourada, muito XP). O raio muda para se distinguirem bem em jogo.
+  const gemas = [
+    { key: 'gemaP', cor: 0x6fcf6f, brilho: 0xb9f5b9, r: 6  },
+    { key: 'gemaM', cor: 0x4ea3f2, brilho: 0xa9d4fc, r: 8  },
+    { key: 'gemaG', cor: 0xf2c14e, brilho: 0xfce8a0, r: 10 },
+  ];
+  gemas.forEach(({ key, cor, brilho, r }) => {
+    g = scene.add.graphics();
+    g.fillStyle(cor, 1);
+    g.fillCircle(r, r, r);
+    g.fillStyle(brilho, 0.8);
+    g.fillCircle(r * 0.7, r * 0.7, r * 0.4);
+    g.generateTexture(key, r * 2, r * 2);
+    g.destroy();
+  });
 }
