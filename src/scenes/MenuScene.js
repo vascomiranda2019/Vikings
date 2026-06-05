@@ -9,6 +9,8 @@ export default class MenuScene extends Phaser.Scene {
     const w  = this.cameras.main.width;
     const h  = this.cameras.main.height;
 
+    this.iniciarMusica();
+
     this.add.tileSprite(0, 0, w, h, 'grelha').setOrigin(0, 0);
     this.add.rectangle(cx, cy, w, h, 0x0b0c12, 0.55);
 
@@ -23,6 +25,9 @@ export default class MenuScene extends Phaser.Scene {
 
     // Botao Jogar (principal)
     this.criarBotao(cx, cy - 10, 220, 54, t('jogar'), 0xf2c14e, 24, () => {
+      if (this.cache.audio.exists('musica') && !this.sound.get('musica')?.isPlaying) {
+        this.sound.play('musica', { loop: true, volume: 0.18 });
+      }
       this.scene.start('GameScene');
     });
 
@@ -33,6 +38,25 @@ export default class MenuScene extends Phaser.Scene {
 
     // Seletor de idioma
     this.criarSeletorIdioma(cx, cy + 125);
+  }
+
+  iniciarMusica() {
+    if (!this.cache.audio.exists('musica')) {
+      console.warn('[AUDIO] musica não está no cache — verifica o caminho do ficheiro');
+      return;
+    }
+    const tocar = () => {
+      if (!this.sound.get('musica')?.isPlaying) {
+        this.sound.play('musica', { loop: true, volume: 0.18 });
+        console.log('[AUDIO] música iniciada');
+      }
+    };
+    if (this.sound.locked) {
+      console.log('[AUDIO] AudioContext bloqueado, a aguardar interação...');
+      this.sound.once('unlocked', tocar);
+    } else {
+      tocar();
+    }
   }
 
   // Helper para criar um botao com hover

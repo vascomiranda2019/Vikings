@@ -17,6 +17,8 @@ export default class PreloadScene extends Phaser.Scene {
     this.add.rectangle(cx, cy, 320, 22, 0x222634).setStrokeStyle(1, 0x3a3f55);
     const barra = this.add.rectangle(cx - 156, cy, 6, 14, 0xf2c14e).setOrigin(0, 0.5);
     this.load.on('progress', (p) => { barra.width = 304 * p; });
+    this.load.on('loaderror', (file) => { console.warn('[AUDIO] Falhou a carregar:', file.key, file.src); });
+    this.load.on('filecomplete-audio-musica', () => { console.log('[AUDIO] musica.mp3 carregada com sucesso!'); });
 
     // --- Traducoes ---
     this.load.json('pt', 'src/i18n/pt.json');
@@ -31,6 +33,9 @@ export default class PreloadScene extends Phaser.Scene {
     // this.load.image('gema',    'assets/images/gema.png');
     // this.load.image('chao',    'assets/images/chao.png');
     // this.load.audio('hit',     'assets/audio/hit.ogg');
+    this.load.audio('musica',   'src/assets/audio/musica.mp3');
+    this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
+    this.load.audio('machado',  'src/assets/audio/axesound.mp3');
   }
 
   create() {

@@ -239,7 +239,10 @@ export default class GameScene extends Phaser.Scene {
     this.physics.pause();
     this.player.setTint(0xff4444);
     this.cameras.main.shake(400, 0.025);
+    const musica = this.cache.audio.exists('musica') ? this.sound.get('musica') : null;
+    if (musica) this.tweens.add({ targets: musica, volume: 0, duration: 800 });
     this.time.delayedCall(800, () => {
+      this.sound.stopAll();
       this.scene.start('GameOverScene', { kills: this.kills, tempo: this.formatarTempo(this.elapsedTime) });
     });
   }
@@ -249,7 +252,10 @@ export default class GameScene extends Phaser.Scene {
     this.physics.pause();
     this.cameras.main.flash(600, 242, 193, 78, false);
     this.mostrarAnuncio(t('valhalla_grito'));
+    const musica = this.cache.audio.exists('musica') ? this.sound.get('musica') : null;
+    if (musica) this.tweens.add({ targets: musica, volume: 0, duration: 1200 });
     this.time.delayedCall(1200, () => {
+      this.sound.stopAll();
       this.scene.start('VictoryScene', { kills: this.kills, tempo: this.formatarTempo(this.elapsedTime) });
     });
   }

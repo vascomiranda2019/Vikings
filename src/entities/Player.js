@@ -99,5 +99,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     m.setDepth(5).setAngularVelocity(720);
     this.scene.physics.moveTo(m, tx, ty, this.axeSpeed);
     this.scene.time.delayedCall(this.axeLifespan, () => { if (m.active) m.destroy(); });
+    if (this.scene.cache.audio.exists('machado')) {
+      this.scene.sound.play('machado', { volume: 0.35 });
+    }
   }
 }
