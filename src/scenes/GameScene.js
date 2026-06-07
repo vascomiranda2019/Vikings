@@ -38,6 +38,7 @@ export default class GameScene extends Phaser.Scene {
     this.orbitalSpeed = 0.005;   // velocidade da rotacao (sobe depois dos 3)
 
     this.criarFundo();
+    this.criarDecoracoes();
     this.criarJogador();
     this.criarControlos();
     this.configurarCamara();
@@ -52,8 +53,60 @@ export default class GameScene extends Phaser.Scene {
   // ---- SETUP ----
 
   criarFundo() {
-    this.add.tileSprite(0, 0, 2400, 2400, 'grelha').setOrigin(0, 0);
+    this.add.tileSprite(0, 0, 2400, 2400, 'chao').setOrigin(0, 0);
     this.physics.world.setBounds(0, 0, 2400, 2400);
+  }
+
+  // Espalha decoracoes pelo mundo. Arvores, bonecos de neve e cabanas tem
+  // corpo de colisao (this.obstaculos); troncos sao so visuais.
+  criarDecoracoes() {
+    this.obstaculos = this.physics.add.staticGroup();
+    const SPAWN = { x: 1200, y: 1200 };
+
+    // Arvores (colisao so no tronco — corpo pequeno na base)
+    const arvores = ['tree0', 'tree1', 'tree2', 'tree3'];
+    for (let i = 0; i < 140; i++) {
+      const x = Phaser.Math.Between(80, 2320);
+      const y = Phaser.Math.Between(80, 2320);
+      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 250) continue;
+
+      const tree = this.obstaculos.create(x, y, Phaser.Utils.Array.GetRandom(arvores));
+      tree.setScale(Phaser.Math.FloatBetween(0.7, 1.3)).setDepth(2 + y / 2400);
+      tree.body.setSize(12, 12);
+      tree.body.setOffset((tree.width - 12) / 2, tree.height - 14);
+      tree.refreshBody();
+    }
+
+    // Bonecos de neve
+    const bonecos = ['snow0', 'snow1', 'snow2'];
+    for (let i = 0; i < 25; i++) {
+      const x = Phaser.Math.Between(80, 2320);
+      const y = Phaser.Math.Between(80, 2320);
+      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 220) continue;
+      const s = this.obstaculos.create(x, y, Phaser.Utils.Array.GetRandom(bonecos));
+      s.setScale(Phaser.Math.FloatBetween(0.8, 1.1)).setDepth(2 + y / 2400);
+      s.refreshBody();
+    }
+
+    // Cabanas (colisao total, poucas, longe do spawn)
+    for (let i = 0; i < 5; i++) {
+      const x = Phaser.Math.Between(200, 2200);
+      const y = Phaser.Math.Between(200, 2200);
+      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 400) continue;
+      const c = this.obstaculos.create(x, y, 'cabin');
+      c.setScale(Phaser.Math.FloatBetween(0.9, 1.1)).setDepth(2 + y / 2400);
+      c.refreshBody();
+    }
+
+    // Troncos (sem colisao — so decoracao)
+    for (let i = 0; i < 50; i++) {
+      const x = Phaser.Math.Between(80, 2320);
+      const y = Phaser.Math.Between(80, 2320);
+      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 180) continue;
+      this.add.image(x, y, 'log')
+        .setScale(Phaser.Math.FloatBetween(0.8, 1.2))
+        .setDepth(1 + y / 2400);
+    }
   }
 
   criarJogador() {
@@ -100,6 +153,10 @@ export default class GameScene extends Phaser.Scene {
       () => this.jogadorLevaDano(), null, this);
     this.physics.add.overlap(this.player, this.gems,
       (p, gem) => this.recolherGema(gem), null, this);
+
+    // Jogador e inimigos batem nos obstaculos (arvores, bonecos, cabanas)
+    this.physics.add.collider(this.player, this.obstaculos);
+    this.physics.add.collider(this.enemies, this.obstaculos);
   }
 
   criarHUD() {

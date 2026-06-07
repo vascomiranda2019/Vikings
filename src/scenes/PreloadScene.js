@@ -24,15 +24,18 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.json('pt', 'src/i18n/pt.json');
     this.load.json('en', 'src/i18n/en.json');
 
-    // --- ASSETS REAIS (descomenta quando tiveres os ficheiros) ---
-    // this.load.image('heroi',   'assets/images/heroi.png');
-    // this.load.image('draugr',  'assets/images/draugr.png');
-    // this.load.image('lobo',    'assets/images/lobo.png');
-    // this.load.image('jotunn',  'assets/images/jotunn.png');
-    // this.load.image('machado', 'assets/images/machado.png');
-    // this.load.image('gema',    'assets/images/gema.png');
-    // this.load.image('chao',    'assets/images/chao.png');
-    // this.load.audio('hit',     'assets/audio/hit.ogg');
+    //--- Assets ---
+    this.load.image('chao',  'src/assets/images/chao.png');
+    this.load.image('tree0', 'src/assets/images/Tree_0.png');
+    this.load.image('tree1', 'src/assets/images/Tree_1.png');
+    this.load.image('tree2', 'src/assets/images/Tree_2.png');
+    this.load.image('tree3', 'src/assets/images/Tree_3.png');
+    this.load.image('log',   'src/assets/images/Log.png');
+    this.load.image('cabin', 'src/assets/images/Log_Cabin.png');
+    this.load.image('snow0', 'src/assets/images/Snowman_0.png');
+    this.load.image('snow1', 'src/assets/images/Snowman_1.png');
+    this.load.image('snow2', 'src/assets/images/Snowman_2.png');
+
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
