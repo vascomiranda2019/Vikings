@@ -13,11 +13,8 @@ export default class GameScene extends Phaser.Scene {
 
   static get POOL_UPGRADES() {
     return [
-      { key: 'velocidade', nome: 'Sowilo',   letra: 'S', descKey: 'upg_velocidade' },
-      { key: 'cadencia',   nome: 'Tiwaz',    letra: 'T', descKey: 'upg_cadencia'  },
       { key: 'vida',       nome: 'Fehu',     letra: 'F', descKey: 'upg_vida'      },
       { key: 'machado',    nome: 'Kenaz',    letra: 'K', descKey: 'upg_machado'   },
-      { key: 'protecao',   nome: 'Algiz',    letra: 'Z', descKey: 'upg_protecao'  },
       { key: 'animal',     nome: 'Ansuz',    letra: 'A', descKey: 'upg_animal'    },
       { key: 'orbital',    nome: 'Jera',     letra: 'J', descKey: 'upg_orbital'   },
       { key: 'escudo',     nome: 'Eihwaz',   letra: 'E', descKey: 'upg_escudo'    },
@@ -47,6 +44,10 @@ export default class GameScene extends Phaser.Scene {
     this.criarHUD();
     this.iniciarTimers();
 
+    // Apaga ouvintes antigos antes de registar, senao a cada reinicio do jogo
+    // ficava mais um e cada runa era aplicada varias vezes (os corvos vinham
+    // logo a 2, os orbitais a 3, etc.).
+    this.events.off('upgradeChosen');
     this.events.on('upgradeChosen', (key) => this.aplicarUpgrade(key));
   }
 
@@ -316,6 +317,21 @@ export default class GameScene extends Phaser.Scene {
         y + Phaser.Math.Between(-12, 12)
       );
       this.gems.add(g);
+      this.garantirGemaAcessivel(g);
+    }
+  }
+
+  // Se a gema calhar em cima de um obstaculo (cabana, boneco de neve, tronco
+  // de arvore), empurra-a aos poucos na direcao do jogador ate sair de cima
+  // dele. Assim nunca fica num sitio inalcancavel. Empurrar para o lado do
+  // jogador e seguro porque o jogador nunca esta dentro de um obstaculo.
+  garantirGemaAcessivel(gem) {
+    if (!this.obstaculos) return;
+    let tentativas = 0;
+    while (tentativas < 16 && this.physics.overlap(gem, this.obstaculos)) {
+      const ang = Phaser.Math.Angle.Between(gem.x, gem.y, this.player.x, this.player.y);
+      gem.body.reset(gem.x + Math.cos(ang) * 14, gem.y + Math.sin(ang) * 14);
+      tentativas++;
     }
   }
 
@@ -445,7 +461,8 @@ export default class GameScene extends Phaser.Scene {
     if (this.player.morreu || this.venceu) return;
     this.player.mover(this.cursors, this.wasd);
     this.enemies.getChildren().forEach((e) => e.moverParaJogador(this.player));
-    this.player.tentarDisparar(time, this.axes);
+    // Passa os inimigos para o disparo automatico mirar no mais proximo.
+    this.player.tentarDisparar(time, this.axes, this.enemies);
 
     this.companions.forEach((c) => {
       c.seguir(this.player);

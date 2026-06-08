@@ -11,12 +11,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframeDuration = 1000;
     this.iFrames        = false;
     this.axeSpeed       = 480;
-    this.axeCooldown    = 350;
+    this.axeCooldown    = 1500;   // tempo entre disparos automaticos (ms)
     this.axeLifespan    = 1500;
     this.proximoDisparo = 0;
 
     // Runas de ataque/recolha
-    this.projeteis   = 1;   // machados por disparo (Wunjo)
+    this.projeteis   = 1;   // machados por disparo (Wunjo, max 3)
     this.pierce      = 0;   // inimigos extra que cada machado atravessa (Thurisaz)
     this.magnetRange = 0;   // raio a que as gemas sao atraidas (Laguz)
 
@@ -40,9 +40,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const len = Math.hypot(dx, dy) || 1;
     this.setVelocity((dx / len) * this.speed, (dy / len) * this.speed);
 
-    const ptr = this.scene.input.activePointer;
-    const wp  = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
-    this.setFlipX(wp.x < this.x);
+    // Vira-se para o lado em que se move (ja nao depende do rato).
+    if (dx < 0) this.setFlipX(true);
+    else if (dx > 0) this.setFlipX(false);
   }
 
   levaDano(amount) {
@@ -98,30 +98,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   aplicarUpgrade(key) {
     switch (key) {
-      case 'velocidade': this.speed          += 30; break;
-      case 'cadencia':   this.axeCooldown     = Math.max(100, this.axeCooldown - 80); break;
       case 'vida':
         this.maxHP += 25;
         this.hp     = Math.min(this.hp + 25, this.maxHP);
         break;
       case 'machado':    this.axeSpeed       += 80;  break;
-      case 'protecao':   this.iframeDuration += 400; break;
       case 'escudo':     this.shield = 1;            break;  // ganha um escudo
-      case 'multishot':  this.projeteis = Math.min(this.projeteis + 1, 6); break;
+      case 'multishot':  this.projeteis = Math.min(this.projeteis + 1, 3); break;
       case 'perfuracao': this.pierce    = Math.min(this.pierce + 1, 4);    break;
       case 'iman':       this.magnetRange += 120;                          break;
     }
   }
 
-  tentarDisparar(time, axes) {
-    const ptr = this.scene.input.activePointer;
-    if (!ptr.isDown || time <= this.proximoDisparo) return;
+  // Dispara sozinho, em cadencia, mirando sempre o inimigo mais proximo.
+  // Ja nao usa o rato nem precisa de carregar em nada.
+  tentarDisparar(time, axes, enemies) {
+    if (time <= this.proximoDisparo) return;
 
-    const wp      = this.scene.cameras.main.getWorldPoint(ptr.x, ptr.y);
-    const baseAng = Math.atan2(wp.y - this.y, wp.x - this.x);
+    const alvo = this._inimigoMaisProximo(enemies);
+    if (!alvo) return;   // sem inimigos por perto, nao desperdica machados
+
+    const baseAng = Math.atan2(alvo.y - this.y, alvo.x - this.x);
     const n       = this.projeteis;
     const spread  = 0.18;                     // radianos entre machados adjacentes
-    const inicio  = -((n - 1) / 2) * spread;  // centra o leque na direcao da mira
+    const inicio  = -((n - 1) / 2) * spread;  // centra o leque na direcao do alvo
 
     for (let i = 0; i < n; i++) {
       this._criarMachado(baseAng + inicio + i * spread, axes);
@@ -133,6 +133,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.proximoDisparo = time + this.axeCooldown;
+  }
+
+  _inimigoMaisProximo(enemies) {
+    let melhor = null;
+    let melhorDist = Infinity;
+    enemies.getChildren().forEach((e) => {
+      if (!e.active) return;
+      const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
+      if (d < melhorDist) { melhorDist = d; melhor = e; }
+    });
+    return melhor;
   }
 
   _criarMachado(angulo, axes) {
