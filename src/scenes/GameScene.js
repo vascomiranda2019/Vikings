@@ -64,42 +64,62 @@ export default class GameScene extends Phaser.Scene {
     this.obstaculos = this.physics.add.staticGroup();
     const SPAWN = { x: 1200, y: 1200 };
 
-    // Arvores (colisao so no tronco — corpo pequeno na base)
-    const arvores = ['tree0', 'tree1', 'tree2', 'tree3'];
-    for (let i = 0; i < 140; i++) {
-      const x = Phaser.Math.Between(80, 2320);
-      const y = Phaser.Math.Between(80, 2320);
-      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 250) continue;
+    // Guarda tudo o que ja bloqueia, com um raio aproximado, para os proximos
+    // nao nascerem demasiado perto. A FOLGA e o espaco livre minimo que tem
+    // de sobrar entre dois obstaculos para o viking e ate o jotunn passarem.
+    const colocados = [];
+    const FOLGA = 50;
 
-      const tree = this.obstaculos.create(x, y, Phaser.Utils.Array.GetRandom(arvores));
-      tree.setScale(Phaser.Math.FloatBetween(0.7, 1.3)).setDepth(2 + y / 2400);
-      tree.body.setSize(12, 12);
-      tree.body.setOffset((tree.width - 12) / 2, tree.height - 14);
-      tree.refreshBody();
+    // Tenta encontrar uma posicao longe do spawn e com folga de tudo o que ja
+    // foi colocado. Devolve null se nao conseguir ao fim de varias tentativas.
+    const procurarPosicao = (raio, distSpawn) => {
+      for (let tent = 0; tent < 25; tent++) {
+        const x = Phaser.Math.Between(80, 2320);
+        const y = Phaser.Math.Between(80, 2320);
+        if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < distSpawn) continue;
+        const livre = colocados.every(
+          (o) => Math.hypot(x - o.x, y - o.y) > o.raio + raio + FOLGA
+        );
+        if (livre) return { x, y };
+      }
+      return null;
+    };
+
+    // Cabanas primeiro (sao grandes; ficam com os melhores sitios)
+    for (let i = 0; i < 5; i++) {
+      const pos = procurarPosicao(40, 400);
+      if (!pos) continue;
+      const c = this.obstaculos.create(pos.x, pos.y, 'cabin');
+      c.setScale(Phaser.Math.FloatBetween(0.9, 1.1)).setDepth(2 + pos.y / 2400);
+      c.refreshBody();
+      colocados.push({ x: pos.x, y: pos.y, raio: 40 });
     }
 
     // Bonecos de neve
     const bonecos = ['snow0', 'snow1', 'snow2'];
     for (let i = 0; i < 25; i++) {
-      const x = Phaser.Math.Between(80, 2320);
-      const y = Phaser.Math.Between(80, 2320);
-      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 220) continue;
-      const s = this.obstaculos.create(x, y, Phaser.Utils.Array.GetRandom(bonecos));
-      s.setScale(Phaser.Math.FloatBetween(0.8, 1.1)).setDepth(2 + y / 2400);
+      const pos = procurarPosicao(16, 220);
+      if (!pos) continue;
+      const s = this.obstaculos.create(pos.x, pos.y, Phaser.Utils.Array.GetRandom(bonecos));
+      s.setScale(Phaser.Math.FloatBetween(0.8, 1.1)).setDepth(2 + pos.y / 2400);
       s.refreshBody();
+      colocados.push({ x: pos.x, y: pos.y, raio: 16 });
     }
 
-    // Cabanas (colisao total, poucas, longe do spawn)
-    for (let i = 0; i < 5; i++) {
-      const x = Phaser.Math.Between(200, 2200);
-      const y = Phaser.Math.Between(200, 2200);
-      if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 400) continue;
-      const c = this.obstaculos.create(x, y, 'cabin');
-      c.setScale(Phaser.Math.FloatBetween(0.9, 1.1)).setDepth(2 + y / 2400);
-      c.refreshBody();
+    // Arvores (colisao so no tronco, mas espacadas para dar passagem)
+    const arvores = ['tree0', 'tree1', 'tree2', 'tree3'];
+    for (let i = 0; i < 140; i++) {
+      const pos = procurarPosicao(9, 250);
+      if (!pos) continue;
+      const tree = this.obstaculos.create(pos.x, pos.y, Phaser.Utils.Array.GetRandom(arvores));
+      tree.setScale(Phaser.Math.FloatBetween(0.7, 1.3)).setDepth(2 + pos.y / 2400);
+      tree.body.setSize(12, 12);
+      tree.body.setOffset((tree.width - 12) / 2, tree.height - 14);
+      tree.refreshBody();
+      colocados.push({ x: pos.x, y: pos.y, raio: 9 });
     }
 
-    // Troncos (sem colisao — so decoracao)
+    // Troncos (sem colisao — so decoracao, por isso nao precisam de folga)
     for (let i = 0; i < 50; i++) {
       const x = Phaser.Math.Between(80, 2320);
       const y = Phaser.Math.Between(80, 2320);
