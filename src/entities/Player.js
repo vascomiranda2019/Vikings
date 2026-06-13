@@ -3,7 +3,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, 'heroi');
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setCollideWorldBounds(true).setDepth(10);
+
+    // O sprite do viking e grande e tem muito espaco vazio a volta. Encolhe-se
+    // um pouco e ajusta-se o corpo de colisao ao boneco real (centrado em x,
+    // para o virar de lado nao desalinhar a colisao).
+    this.setScale(0.7).setDepth(10);
+    this.body.setSize(34, 46);
+    this.body.setOffset(40, 24);
+    this.setCollideWorldBounds(true);
+
+    this.play('viking_idle');
 
     this.speed          = 220;
     this.maxHP          = 100;
@@ -11,7 +20,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframeDuration = 1000;
     this.iFrames        = false;
     this.axeSpeed       = 480;
-    this.axeCooldown    = 1500;   // tempo entre disparos automaticos (ms)
+    this.axeCooldown    = 1000;   // tempo entre disparos automaticos (ms)
     this.axeLifespan    = 1500;
     this.proximoDisparo = 0;
 
@@ -39,6 +48,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     else if (cursors.down.isDown  || wasd.down.isDown)  dy =  1;
     const len = Math.hypot(dx, dy) || 1;
     this.setVelocity((dx / len) * this.speed, (dy / len) * this.speed);
+
+    // Toca a animacao de andar quando se move, parado caso contrario.
+    const aMover = dx !== 0 || dy !== 0;
+    this.play(aMover ? 'viking_walk' : 'viking_idle', true);
 
     // Vira-se para o lado em que se move (ja nao depende do rato).
     if (dx < 0) this.setFlipX(true);

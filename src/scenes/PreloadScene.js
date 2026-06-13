@@ -36,6 +36,9 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image('snow1', 'src/assets/images/Snowman_1.png');
     this.load.image('snow2', 'src/assets/images/Snowman_2.png');
 
+    // Viking: spritesheet de 12x5 frames, cada um com 115x84 px.
+    this.load.spritesheet('heroi', 'src/assets/images/heroi.png', { frameWidth: 115, frameHeight: 84 });
+
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
@@ -52,6 +55,21 @@ export default class PreloadScene extends Phaser.Scene {
 
     // Gera as texturas-placeholder (apaga isto quando usares sprites reais)
     gerarTexturas(this);
+
+    // Animacoes do viking. A linha 0 da spritesheet (frames 0-3) e o parado,
+    // a linha 3 (frames 36-46) e o andar.
+    this.anims.create({
+      key: 'viking_idle',
+      frames: this.anims.generateFrameNumbers('heroi', { frames: [0, 1, 2, 3] }),
+      frameRate: 6,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'viking_walk',
+      frames: this.anims.generateFrameNumbers('heroi', { frames: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] }),
+      frameRate: 12,
+      repeat: -1,
+    });
 
     this.scene.start('MenuScene');
   }
@@ -124,22 +142,13 @@ function gerarTexturas(scene) {
     g.destroy();
   }
 
-  // Grelha do chao
+  // Grelha do chao (usada como fundo nos menus)
   g = scene.add.graphics();
   g.fillStyle(0x12131a, 1);
   g.fillRect(0, 0, 64, 64);
   g.lineStyle(1, 0x1e2233, 1);
   g.strokeRect(0, 0, 64, 64);
   g.generateTexture('grelha', 64, 64);
-  g.destroy();
-
-  // Heroi
-  g = scene.add.graphics();
-  g.fillStyle(0x2b3b55, 1);
-  g.fillRoundedRect(0, 0, 28, 34, 6);
-  g.fillStyle(0xd9a441, 1);
-  g.fillRoundedRect(4, 0, 20, 12, 4);
-  g.generateTexture('heroi', 28, 34);
   g.destroy();
 
   // Draugr
