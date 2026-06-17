@@ -1,4 +1,5 @@
 import { obterIdioma, definirIdioma, t } from '../i18n/i18n.js';
+import { guardarVolume } from '../som.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('MenuScene'); }
@@ -16,6 +17,7 @@ export default class MenuScene extends Phaser.Scene {
     this._criarTitulo(cx, cy);
     this._criarBotoes(cx, cy);
     this._criarSeletorIdioma(cx, cy + 140);
+    this._criarToggleSom(cx, cy + 175);
     this._criarBrasa(w, h);
 
     this.cameras.main.fadeIn(700, 0, 0, 0);
@@ -235,6 +237,81 @@ export default class MenuScene extends Phaser.Scene {
       this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 110 });
     });
     bg.on('pointerdown', aoClicar);
+  }
+
+  // ---- BARRA DE VOLUME ----
+
+  _criarToggleSom(cx, y) {
+    const TRACK_W = 120;
+    const TRACK_H = 8;
+    const iconX   = cx - 52;
+    const trackLX = cx - 34;
+    const trackCX = trackLX + TRACK_W / 2;
+
+    this.add.text(cx - 72, y, t('som') + ':', {
+      fontFamily: 'monospace', fontSize: '13px', color: '#565e70',
+    }).setOrigin(1, 0.5);
+
+    let volAnterior = this.sound.volume > 0 ? this.sound.volume : 0.7;
+
+    const obterCorAtiva  = () => this.sound.volume > 0 ? 0xf2c14e : 0x3a4455;
+    const obterIcone     = () => this.sound.volume > 0 ? '♪' : '✕';
+    const obterCorIcone  = () => this.sound.volume > 0 ? '#f2c14e' : '#4a5060';
+
+    const icone = this.add.text(iconX, y, obterIcone(), {
+      fontFamily: 'monospace', fontSize: '18px', color: obterCorIcone(),
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    // Pista de fundo
+    this.add.rectangle(trackCX, y, TRACK_W, TRACK_H, 0x2a3040).setOrigin(0.5);
+
+    // Preenchimento dinamico
+    const fill   = this.add.rectangle(trackLX, y, 0, TRACK_H, 0xf2c14e).setOrigin(0, 0.5);
+    // Handle
+    const handle = this.add.rectangle(trackLX, y, 8, 20, 0xf2c14e).setOrigin(0.5);
+    // Hitbox invisivel para capturar clicks/drag em toda a pista
+    const hitbox = this.add.rectangle(trackCX, y, TRACK_W, 24, 0, 0)
+      .setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    const atualizar = (vol) => {
+      vol = Phaser.Math.Clamp(vol, 0, 1);
+      this.sound.setVolume(vol);
+      guardarVolume(vol);
+      fill.width = TRACK_W * vol;
+      handle.x   = trackLX + TRACK_W * vol;
+      fill.setFillStyle(obterCorAtiva());
+      handle.setFillStyle(obterCorAtiva());
+      icone.setText(obterIcone());
+      icone.setColor(obterCorIcone());
+    };
+
+    atualizar(this.sound.volume);
+
+    let arrastando = false;
+    const calcVol = (px) => Phaser.Math.Clamp((px - trackLX) / TRACK_W, 0, 1);
+
+    hitbox.on('pointerdown', (pointer) => {
+      arrastando = true;
+      const v = calcVol(pointer.x);
+      if (v > 0) volAnterior = v;
+      atualizar(v);
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (!arrastando) return;
+      const v = calcVol(pointer.x);
+      if (v > 0) volAnterior = v;
+      atualizar(v);
+    });
+    this.input.on('pointerup', () => { arrastando = false; });
+
+    icone.on('pointerdown', () => {
+      if (this.sound.volume > 0) {
+        volAnterior = this.sound.volume;
+        atualizar(0);
+      } else {
+        atualizar(volAnterior > 0 ? volAnterior : 0.7);
+      }
+    });
   }
 
   // ---- SELETOR DE IDIOMA ----

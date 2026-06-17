@@ -41,5 +41,11 @@
   "instr_dica1": "Mata inimigos e eles largam gemas de alma",
   "instr_dica2": "Apanha gemas para ganhar XP e subir de nivel",
   "instr_dica3": "A cada nivel, escolhe uma runa para ficares mais forte",
-  "instr_dica4": "Os inimigos ficam mais rapidos e numerosos com o tempo"
+  "instr_dica4": "Os inimigos ficam mais rapidos e numerosos com o tempo",
+  "pausa_titulo": "PAUSA",
+  "pausa_continuar": "Continuar",
+  "pausa_recomecar": "Recomecar",
+  "pausa_terminar": "Terminar Jogo",
+  "pausa_dica": "ESC para continuar",
+  "som": "SOM"
 }

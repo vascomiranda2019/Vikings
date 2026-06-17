@@ -41,5 +41,11 @@
   "instr_dica1": "Kill enemies and they drop soul gems",
   "instr_dica2": "Collect gems to gain XP and level up",
   "instr_dica3": "Each level, choose a rune to grow stronger",
-  "instr_dica4": "Enemies get faster and more numerous over time"
+  "instr_dica4": "Enemies get faster and more numerous over time",
+  "pausa_titulo": "PAUSED",
+  "pausa_continuar": "Resume",
+  "pausa_recomecar": "Restart",
+  "pausa_terminar": "Quit Game",
+  "pausa_dica": "Press ESC to resume",
+  "som": "SOUND"
 }

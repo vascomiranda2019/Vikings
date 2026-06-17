@@ -148,6 +148,17 @@ export default class GameScene extends Phaser.Scene {
       left:  Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D,
     });
+
+    // Evita duplicar o ouvinte se a GameScene for reiniciada
+    this.input.keyboard.off('keydown-ESC');
+    this.input.keyboard.on('keydown-ESC', () => this.pausarJogo());
+  }
+
+  pausarJogo() {
+    if (this.player.morreu || this.venceu) return;
+    if (this.scene.isPaused()) return;
+    this.scene.pause();
+    this.scene.launch('PauseScene');
   }
 
   configurarCamara() {
