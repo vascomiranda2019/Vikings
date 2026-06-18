@@ -5,7 +5,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       // animada, por isso traz escala, corpo de colisao e animacao proprios.
       serpente: {
         texture: 'serpente', speed: 70, hp: 1, gemas: 1,
-        anim: 'serpente_move', escala: 0.6,
+        anim: 'serpente_move', escala: 0.95,
         corpo: { w: 44, h: 18, offX: 10, offY: 35 },
         corMorte: 0x6fcf6f,
       },

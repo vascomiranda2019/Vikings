@@ -68,14 +68,14 @@ export default class GameScene extends Phaser.Scene {
     // nao nascerem demasiado perto. A FOLGA e o espaco livre minimo que tem
     // de sobrar entre dois obstaculos para o viking e ate o jotunn passarem.
     const colocados = [];
-    const FOLGA = 50;
+    const FOLGA = 100;
 
     // Tenta encontrar uma posicao longe do spawn e com folga de tudo o que ja
     // foi colocado. Devolve null se nao conseguir ao fim de varias tentativas.
     const procurarPosicao = (raio, distSpawn) => {
       for (let tent = 0; tent < 25; tent++) {
-        const x = Phaser.Math.Between(80, 2320);
-        const y = Phaser.Math.Between(80, 2320);
+        const x = Phaser.Math.Between(100, 2320);
+        const y = Phaser.Math.Between(100, 2320);
         if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < distSpawn) continue;
         const livre = colocados.every(
           (o) => Math.hypot(x - o.x, y - o.y) > o.raio + raio + FOLGA
@@ -121,8 +121,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Troncos (sem colisao — so decoracao, por isso nao precisam de folga)
     for (let i = 0; i < 50; i++) {
-      const x = Phaser.Math.Between(80, 2320);
-      const y = Phaser.Math.Between(80, 2320);
+      const x = Phaser.Math.Between(100, 2320);
+      const y = Phaser.Math.Between(100, 2320);
       if (Math.hypot(x - SPAWN.x, y - SPAWN.y) < 180) continue;
       this.add.image(x, y, 'log')
         .setScale(Phaser.Math.FloatBetween(0.8, 1.2))

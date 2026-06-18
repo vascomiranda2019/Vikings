@@ -52,6 +52,9 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image('lobo4', 'src/assets/images/lobo4.png');
     this.load.image('lobo5', 'src/assets/images/lobo5.png');
 
+    // Corvo aliado: folha de 8x3 frames de 16x16. A linha do meio (frames 8-15) e o voo.
+    this.load.spritesheet('corvo', 'src/assets/images/corvo.png', { frameWidth: 16, frameHeight: 16 });
+
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
@@ -97,6 +100,14 @@ export default class PreloadScene extends Phaser.Scene {
       key: 'troll_walk',
       frames: this.anims.generateFrameNumbers('troll', { frames: [0, 1, 2, 3] }),
       frameRate: 5,
+      repeat: -1,
+    });
+
+    // Animacao do corvo a voar (linha do meio da folha, frames 8 a 15).
+    this.anims.create({
+      key: 'corvo_fly',
+      frames: this.anims.generateFrameNumbers('corvo', { frames: [8, 9, 10, 11, 12, 13, 14, 15] }),
+      frameRate: 12,
       repeat: -1,
     });
 
@@ -191,21 +202,6 @@ function gerarTexturas(scene) {
   g.fillStyle(0xe6e8ee, 1);
   g.fillPoints([{ x: 24, y: 4 }, { x: 26, y: 11 }, { x: 22, y: 12 }, { x: 22, y: 6 }], true);
   g.generateTexture('machado', 28, 28);
-  g.destroy();
-
-  // Corvo aliado (o companheiro). Preto, no espirito dos corvos de Odin,
-  // virado para a direita com bico dourado e um olho vermelho.
-  g = scene.add.graphics();
-  g.fillStyle(0x1a1a22, 1);
-  g.fillEllipse(11, 9, 18, 11);          // corpo
-  g.fillTriangle(1, 9, 8, 4, 8, 14);     // cauda
-  g.fillStyle(0x2c2c3a, 1);
-  g.fillEllipse(14, 7, 9, 6);            // asa/cabeca mais clara
-  g.fillStyle(0xe0a020, 1);
-  g.fillTriangle(19, 6, 25, 8, 19, 10);  // bico
-  g.fillStyle(0xff5555, 1);
-  g.fillCircle(16, 6, 1.3);              // olho
-  g.generateTexture('corvo', 26, 18);
   g.destroy();
 
   // Bola de fogo (projetil do corvo). Halo vermelho por fora, laranja no

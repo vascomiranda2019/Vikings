@@ -4,6 +4,11 @@ export default class Companion extends Phaser.GameObjects.Sprite {
     scene.add.existing(this);
     this.setDepth(9);
 
+    // O sprite e pequeno (16x16), por isso aumenta-se um pouco. Toca a
+    // animacao de bater as asas em continuo.
+    this.setScale(1.6);
+    this.play('corvo_fly');
+
     this.fireCooldown   = 1800;  // bem mais lento que os machados, para nao facilitar
     this.proximoDisparo = 0;
     this.range          = 360;   // so dispara a inimigos dentro deste alcance
@@ -20,6 +25,14 @@ export default class Companion extends Phaser.GameObjects.Sprite {
   seguir(player) {
     const alvoX = player.x + this.offsetX;
     const alvoY = player.y + this.offsetY;
+
+    // Vira-se para o lado do alvo. Por defeito o corvo olha para a esquerda,
+    // por isso espelha-se quando o alvo esta a direita. A zona morta evita
+    // que fique a tremer quando ja esta quase no sitio.
+    const dx = alvoX - this.x;
+    if (dx > 4)       this.setFlipX(true);
+    else if (dx < -4) this.setFlipX(false);
+
     this.x = Phaser.Math.Linear(this.x, alvoX, 0.08);
     this.y = Phaser.Math.Linear(this.y, alvoY, 0.08);
   }
