@@ -56,6 +56,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
     this.load.image('menu_bg',  'src/assets/images/menu.png');
+    this.load.image('valhala_bg', 'src/assets/images/valhala_imagem.png');
   }
 
   create() {
@@ -65,6 +66,7 @@ export default class PreloadScene extends Phaser.Scene {
 
     // Filtro suave para a imagem do menu (pixelArt mode usa NEAREST por defeito)
     this.textures.get('menu_bg').setFilter(Phaser.Textures.LINEAR);
+    this.textures.get('valhala_bg').setFilter(Phaser.Textures.LINEAR);
 
     // Gera as texturas-placeholder (apaga isto quando usares sprites reais)
     gerarTexturas(this);
