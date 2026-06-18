@@ -44,6 +44,9 @@ export default class GameScene extends Phaser.Scene {
     this.criarHUD();
     this.iniciarTimers();
 
+    this.mostrarAnuncio(t('anuncio_serpentes'));
+    if (this.cache.audio.exists('snakes')) this.sound.play('snakes', { volume: 0.35 });
+
     // Apaga ouvintes antigos antes de registar, senao a cada reinicio do jogo
     // ficava mais um e cada runa era aplicada varias vezes (os corvos vinham
     // logo a 2, os orbitais a 3, etc.).
