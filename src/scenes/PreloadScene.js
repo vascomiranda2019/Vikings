@@ -39,6 +39,19 @@ export default class PreloadScene extends Phaser.Scene {
     // Viking: spritesheet de 12x5 frames, cada um com 115x84 px.
     this.load.spritesheet('heroi', 'src/assets/images/heroi.png', { frameWidth: 115, frameHeight: 84 });
 
+    // Serpente (inimigo fraco): 7x2 frames de 64x64. A linha 0 (frames 0-6) e o rastejar.
+    this.load.spritesheet('serpente', 'src/assets/images/serpente.png', { frameWidth: 64, frameHeight: 64 });
+
+    // Troll (inimigo forte / jotunn): folha limpa de 4 frames de 64x76, o troll de frente a andar.
+    this.load.spritesheet('troll', 'src/assets/images/troll.png', { frameWidth: 64, frameHeight: 76 });
+
+    // Lobos: 5 visuais diferentes (64x64). Ao nascer, cada lobo sorteia um destes.
+    this.load.image('lobo1', 'src/assets/images/lobo1.png');
+    this.load.image('lobo2', 'src/assets/images/lobo2.png');
+    this.load.image('lobo3', 'src/assets/images/lobo3.png');
+    this.load.image('lobo4', 'src/assets/images/lobo4.png');
+    this.load.image('lobo5', 'src/assets/images/lobo5.png');
+
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
@@ -68,6 +81,22 @@ export default class PreloadScene extends Phaser.Scene {
       key: 'viking_walk',
       frames: this.anims.generateFrameNumbers('heroi', { frames: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] }),
       frameRate: 12,
+      repeat: -1,
+    });
+
+    // Animacao da serpente a rastejar (linha de cima da spritesheet).
+    this.anims.create({
+      key: 'serpente_move',
+      frames: this.anims.generateFrameNumbers('serpente', { frames: [0, 1, 2, 3, 4, 5, 6] }),
+      frameRate: 8,
+      repeat: -1,
+    });
+
+    // Animacao do troll a andar (lento, e o tanque pesado).
+    this.anims.create({
+      key: 'troll_walk',
+      frames: this.anims.generateFrameNumbers('troll', { frames: [0, 1, 2, 3] }),
+      frameRate: 5,
       repeat: -1,
     });
 
@@ -149,48 +178,6 @@ function gerarTexturas(scene) {
   g.lineStyle(1, 0x1e2233, 1);
   g.strokeRect(0, 0, 64, 64);
   g.generateTexture('grelha', 64, 64);
-  g.destroy();
-
-  // Draugr
-  g = scene.add.graphics();
-  g.fillStyle(0x4a5d3a, 1);
-  g.fillRoundedRect(0, 0, 26, 30, 5);
-  g.fillStyle(0x6b7d57, 1);
-  g.fillRoundedRect(3, 2, 20, 10, 3);
-  g.generateTexture('draugr', 26, 30);
-  g.destroy();
-
-  // Lobo
-  g = scene.add.graphics();
-  g.fillStyle(0x6a6a7a, 1);
-  g.fillRoundedRect(0, 8, 32, 18, 5);
-  g.fillStyle(0x8a8a9a, 1);
-  g.fillRoundedRect(4, 4, 20, 14, 4);
-  g.fillStyle(0x6a6a7a, 1);
-  g.fillTriangle(6, 4, 10, -2, 14, 4);
-  g.fillTriangle(16, 4, 20, -2, 24, 4);
-  g.fillStyle(0xddddee, 1);
-  g.fillCircle(10, 8, 2);
-  g.fillCircle(20, 8, 2);
-  g.generateTexture('lobo', 32, 26);
-  g.destroy();
-
-  // Jotunn
-  g = scene.add.graphics();
-  g.fillStyle(0xd4eef5, 1);
-  g.fillTriangle(8, 14, 14, 4, 20, 14);
-  g.fillTriangle(22, 14, 28, 4, 34, 14);
-  g.fillStyle(0x7ab8cc, 1);
-  g.fillRoundedRect(0, 12, 44, 46, 8);
-  g.fillStyle(0xa0d4e4, 1);
-  g.fillRoundedRect(4, 14, 36, 20, 6);
-  g.fillStyle(0xff4444, 1);
-  g.fillCircle(14, 22, 4);
-  g.fillCircle(30, 22, 4);
-  g.fillStyle(0x000000, 1);
-  g.fillCircle(15, 22, 2);
-  g.fillCircle(31, 22, 2);
-  g.generateTexture('jotunn', 44, 58);
   g.destroy();
 
   // Machado

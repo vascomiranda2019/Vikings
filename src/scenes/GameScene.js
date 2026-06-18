@@ -272,7 +272,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   tiposDisponiveis() {
-    const tipos = ['draugr'];
+    const tipos = ['serpente'];
     if (this.elapsedTime >= 45) tipos.push('lobo');
     if (this.elapsedTime >= 90) tipos.push('jotunn');
     return tipos;
@@ -282,7 +282,12 @@ export default class GameScene extends Phaser.Scene {
     const tipo = Enemy.TYPES[tipoKey];
     const x    = this.player.x + Math.cos(angulo) * 620;
     const y    = this.player.y + Math.sin(angulo) * 620;
-    const e    = new Enemy(this, x, y, tipo.texture);
+    // Se o tipo tiver varios visuais (os lobos), sorteia um deles; cada um
+    // com a mesma probabilidade. Caso contrario usa a textura unica.
+    const textura = tipo.texturas
+      ? Phaser.Utils.Array.GetRandom(tipo.texturas)
+      : tipo.texture;
+    const e    = new Enemy(this, x, y, textura);
     this.enemies.add(e);
     e.init(tipoKey);
   }
