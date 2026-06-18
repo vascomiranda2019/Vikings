@@ -142,7 +142,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Som uma vez por rajada (nao por machado), para nao ficar demasiado alto.
     if (this.scene.cache.audio.exists('machado')) {
-      this.scene.sound.play('machado', { volume: 0.35 });
+      this.scene.sound.play('machado', { volume: 0.55 });
     }
 
     this.proximoDisparo = time + this.axeCooldown;

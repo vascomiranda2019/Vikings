@@ -149,7 +149,7 @@ export default class MenuScene extends Phaser.Scene {
   _criarBotoes(cx, cy) {
     this.criarBotao(cx, cy + 12, 235, 52, t('jogar'), 0xf2c14e, 22, () => {
       if (this.cache.audio.exists('musica') && !this.sound.get('musica')?.isPlaying) {
-        this.sound.play('musica', { loop: true, volume: 0.18 });
+        this.sound.play('musica', { loop: true, volume: 0.3 });
       }
       this.cameras.main.fade(350, 0, 0, 0);
       this.time.delayedCall(350, () => this.scene.start('GameScene'));
@@ -198,7 +198,7 @@ export default class MenuScene extends Phaser.Scene {
     }
     const tocar = () => {
       if (!this.sound.get('musica')?.isPlaying) {
-        this.sound.play('musica', { loop: true, volume: 0.18 });
+        this.sound.play('musica', { loop: true, volume: 0.3 });
       }
     };
     if (this.sound.locked) {

@@ -58,7 +58,7 @@ export default class UpgradeScene extends Phaser.Scene {
 
   escolherUpgrade(key) {
     if (this.cache.audio.exists('nivel')) {
-      this.sound.play('nivel', { volume: 0.6 });
+      this.sound.play('nivel', { volume: 0.85 });
     }
     this.scene.get('GameScene').events.emit('upgradeChosen', key);
     this.scene.stop('UpgradeScene');

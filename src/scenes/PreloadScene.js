@@ -59,8 +59,11 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
     this.load.audio('snakes',   'src/assets/audio/snakes.mp3');
-    this.load.image('menu_bg',  'src/assets/images/menu.png');
-    this.load.image('valhala_bg', 'src/assets/images/valhala_imagem.png');
+    this.load.audio('wolf',     'src/assets/audio/wolf.mp3');
+    this.load.audio('dragon',   'src/assets/audio/dragon.mp3');
+    this.load.audio('troll',    'src/assets/audio/troll.mp3');
+    this.load.image('menu_bg',  'src/assets/images/menu.jpg');
+    this.load.image('valhala_bg', 'src/assets/images/valhala_imagem.jpg');
   }
 
   create() {

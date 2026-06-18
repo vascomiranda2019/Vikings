@@ -45,7 +45,7 @@ export default class GameScene extends Phaser.Scene {
     this.iniciarTimers();
 
     this.mostrarAnuncio(t('anuncio_serpentes'));
-    if (this.cache.audio.exists('snakes')) this.sound.play('snakes', { volume: 0.35 });
+    if (this.cache.audio.exists('snakes')) this.sound.play('snakes', { volume: 0.7 });
 
     // Apaga ouvintes antigos antes de registar, senao a cada reinicio do jogo
     // ficava mais um e cada runa era aplicada varias vezes (os corvos vinham
@@ -206,7 +206,7 @@ export default class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
 
     this.killsText = this.add.text(16, 16, `${t('abates')}: 0`, {
-      fontFamily: 'monospace', fontSize: '15px', color: '#cfd3dc',
+      fontFamily: 'monospace', fontSize: '15px', color: '#ff0000',
     }).setScrollFactor(0).setDepth(100);
 
     this.levelText = this.add.text(16, 36, `${t('nivel')} 1`, {
@@ -244,8 +244,18 @@ export default class GameScene extends Phaser.Scene {
         if (restam <= 30 && restam > 0) this.countdownText.setText(`${t('valhalla_em')} ${restam}s!`);
         else if (restam <= 0) this.countdownText.setText('');
 
-        if (this.elapsedTime === 45)  this.mostrarAnuncio(t('anuncio_lobos'));
-        if (this.elapsedTime === 90)  this.mostrarAnuncio(t('anuncio_jotunn'));
+        if (this.elapsedTime === 45) {
+          this.mostrarAnuncio(t('anuncio_lobos'));
+          if (this.cache.audio.exists('wolf')) this.sound.play('wolf', { volume: 0.7 });
+        }
+        if (this.elapsedTime === 90) {
+          this.mostrarAnuncio(t('anuncio_jotunn'));
+          if (this.cache.audio.exists('troll')) this.sound.play('troll', { volume: 0.7 });
+        }
+        if (this.elapsedTime === 120) {
+          this.mostrarAnuncio(t('anuncio_dragoes'));
+          if (this.cache.audio.exists('dragon')) this.sound.play('dragon', { volume: 0.7 });
+        }
         if (this.elapsedTime === 150) this.mostrarAnuncio(t('anuncio_30s'));
 
         if (this.elapsedTime >= GameScene.TEMPO_VITORIA) this.vencerJogo();
