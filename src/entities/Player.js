@@ -20,7 +20,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.iframeDuration = 1000;
     this.iFrames        = false;
     this.axeSpeed       = 480;
-    this.axeCooldown    = 1;   // tempo entre disparos automaticos (ms)
+    this.axeCooldown    = 1000;   // tempo entre disparos automaticos (ms)
     this.axeLifespan    = 1500;
     this.proximoDisparo = 0;
 

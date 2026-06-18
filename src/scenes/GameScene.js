@@ -3,11 +3,13 @@ import Player    from '../entities/Player.js';
 import Enemy     from '../entities/Enemy.js';
 import Gem       from '../entities/Gem.js';
 import Companion from '../entities/Companion.js';
+import Boss      from '../entities/Boss.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   static get TEMPO_VITORIA() { return 180; }
+  static get TEMPO_BOSS()    { return 179; }   // aos 2:59 nasce o dragao
   static get MAX_CORVOS()    { return 2; }
   static get MAX_ORBITAIS()  { return 3; }
 
@@ -33,6 +35,9 @@ export default class GameScene extends Phaser.Scene {
     this.orbitalCount = 0;       // quantos machados a girar (max 3)
     this.orbitalAngle = 0;       // angulo atual da rotacao
     this.orbitalSpeed = 0.005;   // velocidade da rotacao (sobe depois dos 3)
+
+    this.bossAtivo    = false;   // verdadeiro a partir do momento do dragao
+    this.boss         = null;
 
     this.criarFundo();
     this.criarDecoracoes();
@@ -236,7 +241,7 @@ export default class GameScene extends Phaser.Scene {
       delay: 1000,
       loop: true,
       callback: () => {
-        if (this.player.morreu || this.venceu) return;
+        if (this.player.morreu || this.venceu || this.bossAtivo) return;
         this.elapsedTime++;
         this.timerText.setText(this.formatarTempo(this.elapsedTime));
 
@@ -258,12 +263,12 @@ export default class GameScene extends Phaser.Scene {
         }
         if (this.elapsedTime === 150) this.mostrarAnuncio(t('anuncio_30s'));
 
-        if (this.elapsedTime >= GameScene.TEMPO_VITORIA) this.vencerJogo();
+        if (this.elapsedTime >= GameScene.TEMPO_BOSS) this.iniciarBoss();
       },
     });
 
     const spawnLoop = () => {
-      if (this.player.morreu || this.venceu) return;
+      if (this.player.morreu || this.venceu || this.bossAtivo) return;
       this.spawnOnda();
       const delay = Math.max(400, 900 - Math.floor(this.elapsedTime / 30) * 80);
       this.time.delayedCall(delay, spawnLoop);
@@ -343,6 +348,18 @@ export default class GameScene extends Phaser.Scene {
   // de fogo e pelos orbitais.
   acertarInimigo(enemy) {
     const morreu = enemy.receberDano();
+
+    // O dragao tem barra propria e nao larga gemas nem conta como abate.
+    if (enemy.isBoss) {
+      this.atualizarBossBar();
+      if (morreu) {
+        enemy.particulasMorte();
+        enemy.destroy();
+        this.vencerJogo();
+      }
+      return;
+    }
+
     if (morreu) {
       const { x, y, gemas } = enemy;
       enemy.particulasMorte();
@@ -483,6 +500,54 @@ export default class GameScene extends Phaser.Scene {
       this.sound.stopAll();
       this.scene.start('VictoryScene', { kills: this.kills, tempo: this.formatarTempo(this.elapsedTime), nivel: this.player.level });
     });
+  }
+
+  // ---- BOSS ----
+
+  // Aos 2:59 o tempo congela, os monstros no mapa morrem e deixam de nascer,
+  // e o dragao surge no centro. A partir daqui, matar o dragao da a vitoria.
+  iniciarBoss() {
+    if (this.bossAtivo) return;
+    this.bossAtivo = true;
+
+    // Mata todos os monstros que estao no mapa.
+    this.enemies.getChildren().slice().forEach((e) => {
+      if (e.active) { if (e.particulasMorte) e.particulasMorte(); e.destroy(); }
+    });
+
+    this.countdownText.setText('');
+    this.mostrarAnuncio(t('anuncio_dragao'));
+    if (this.cache.audio.exists('dragon')) this.sound.play('dragon', { volume: 0.8 });
+    this.cameras.main.shake(600, 0.01);
+
+    // Nasce o dragao no centro do mapa.
+    this.boss = new Boss(this, 1200, 1200);
+    this.enemies.add(this.boss);
+
+    this.criarBossBar();
+  }
+
+  criarBossBar() {
+    const cx   = this.cameras.main.centerX;
+    const w    = this.cameras.main.width;
+    const larg = Math.min(520, w - 80);
+    this.bossBarLarg = larg;
+
+    this.bossNomeTxt = this.add.text(cx, 60, t('boss_nome'), {
+      fontFamily: 'monospace', fontSize: '14px', color: '#f2c14e',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(151);
+
+    this.bossBarBg = this.add.rectangle(cx, 80, larg, 14, 0x3a0a0a)
+      .setStrokeStyle(2, 0x8a2a2a).setScrollFactor(0).setDepth(150);
+    this.bossBar = this.add.rectangle(cx - larg / 2, 80, larg, 12, 0xcc2b2b)
+      .setOrigin(0, 0.5).setScrollFactor(0).setDepth(151);
+  }
+
+  atualizarBossBar() {
+    if (!this.bossBar || !this.boss) return;
+    const frac = Math.max(0, this.boss.hp / this.boss.maxHp);
+    this.bossBar.width = this.bossBarLarg * frac;
   }
 
   // ---- EFEITOS ----

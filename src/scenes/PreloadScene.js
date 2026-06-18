@@ -55,6 +55,9 @@ export default class PreloadScene extends Phaser.Scene {
     // Corvo aliado: folha de 8x3 frames de 16x16. A linha do meio (frames 8-15) e o voo.
     this.load.spritesheet('corvo', 'src/assets/images/corvo.png', { frameWidth: 16, frameHeight: 16 });
 
+    // Dragao (boss): folha de 4 frames de 16x16, o dragao a bater as asas.
+    this.load.spritesheet('dragao', 'src/assets/images/dragao.png', { frameWidth: 16, frameHeight: 16 });
+
     this.load.audio('musica',   'src/assets/audio/musica.mp3');
     this.load.audio('nivel',    'src/assets/audio/levelup.mp3');
     this.load.audio('machado',  'src/assets/audio/axesound.mp3');
@@ -114,6 +117,14 @@ export default class PreloadScene extends Phaser.Scene {
       key: 'corvo_fly',
       frames: this.anims.generateFrameNumbers('corvo', { frames: [8, 9, 10, 11, 12, 13, 14, 15] }),
       frameRate: 12,
+      repeat: -1,
+    });
+
+    // Animacao do dragao (boss) a bater as asas.
+    this.anims.create({
+      key: 'dragao_fly',
+      frames: this.anims.generateFrameNumbers('dragao', { frames: [0, 1, 2, 3] }),
+      frameRate: 6,
       repeat: -1,
     });
 
