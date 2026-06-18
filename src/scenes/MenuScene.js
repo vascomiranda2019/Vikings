@@ -249,7 +249,7 @@ export default class MenuScene extends Phaser.Scene {
     const trackCX = trackLX + TRACK_W / 2;
 
     this.add.text(cx - 72, y, t('som') + ':', {
-      fontFamily: 'monospace', fontSize: '13px', color: '#565e70',
+      fontFamily: 'monospace', fontSize: '13px', color: '#f2c14e',
     }).setOrigin(1, 0.5);
 
     let volAnterior = this.sound.volume > 0 ? this.sound.volume : 0.7;
@@ -318,7 +318,7 @@ export default class MenuScene extends Phaser.Scene {
 
   _criarSeletorIdioma(cx, y) {
     this.add.text(cx - 72, y, t('idioma') + ':', {
-      fontFamily: 'monospace', fontSize: '13px', color: '#565e70',
+      fontFamily: 'monospace', fontSize: '13px', color: '#f2c14e',
     }).setOrigin(1, 0.5);
 
     const atual = obterIdioma();
