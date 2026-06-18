@@ -455,7 +455,7 @@ export default class GameScene extends Phaser.Scene {
     if (musica) this.tweens.add({ targets: musica, volume: 0, duration: 800 });
     this.time.delayedCall(800, () => {
       this.sound.stopAll();
-      this.scene.start('GameOverScene', { kills: this.kills, tempo: this.formatarTempo(this.elapsedTime) });
+      this.scene.start('GameOverScene', { kills: this.kills, tempo: this.formatarTempo(this.elapsedTime), nivel: this.player.level });
     });
   }
 
