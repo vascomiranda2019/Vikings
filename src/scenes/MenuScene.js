@@ -322,10 +322,14 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(1, 0.5);
 
     const atual = obterIdioma();
-    const linguas = [{ codigo: 'pt', label: 'PT' }, { codigo: 'en', label: 'EN' }];
+    const linguas = [
+      { codigo: 'pt', label: 'PT' },
+      { codigo: 'en', label: 'EN' },
+      { codigo: 'no', label: 'NO' },
+    ];
 
     linguas.forEach((lingua, i) => {
-      const lx    = cx - 28 + i * 60;
+      const lx    = cx + (i - (linguas.length - 1) / 2) * 50;
       const ativo = atual === lingua.codigo;
       const btn   = this.add.text(lx, y, lingua.label, {
         fontFamily: 'monospace', fontSize: '16px',

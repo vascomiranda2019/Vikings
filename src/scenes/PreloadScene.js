@@ -23,6 +23,7 @@ export default class PreloadScene extends Phaser.Scene {
     // --- Traducoes ---
     this.load.json('pt', 'src/i18n/pt.json');
     this.load.json('en', 'src/i18n/en.json');
+    this.load.json('no', 'src/i18n/no.json');
 
     //--- Assets ---
     this.load.image('chao',  'src/assets/images/chao.png');
@@ -73,6 +74,7 @@ export default class PreloadScene extends Phaser.Scene {
     // Regista as linguas carregadas
     registarIdioma('pt', this.cache.json.get('pt'));
     registarIdioma('en', this.cache.json.get('en'));
+    registarIdioma('no', this.cache.json.get('no'));
 
     // Filtro suave para a imagem do menu (pixelArt mode usa NEAREST por defeito)
     this.textures.get('menu_bg').setFilter(Phaser.Textures.LINEAR);
